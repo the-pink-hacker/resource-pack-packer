@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31321.278
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Resource Pack Builder", "Resource Pack Builder.pyproj", "{9537CB2B-875E-443B-9A18-A4FE73040280}"
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "resource-pack-builder", "resource-pack-builder.pyproj", "{9537CB2B-875E-443B-9A18-A4FE73040280}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
