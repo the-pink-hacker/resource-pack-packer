@@ -1,1 +1,1 @@
-pyinstaller --onefile --noupx Resource_Pack_Builder.py
+pyinstaller --onefile --noupx resource-pack-packer.py
