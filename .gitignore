@@ -1,0 +1,25 @@
+
+settings.json
+
+# Python Tools for Visual Studio (PTVS)
+__pycache__/
+*.pyc
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Visual Studio 2015/2017 cache/options directory
+.vs/
+
+# PyInstaller
+*.manifest
+*.spec
+dist/
+build/
+
+temp/
+
