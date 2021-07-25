@@ -87,7 +87,7 @@ def RegenerateMeta(dir, version):
 		if data["pack"]["pack_format"] != packFormat:
 			data["pack"]["pack_format"] = packFormat
 
-			json.dump(data, file, ensure_ascii=False, indent=2)
+		json.dump(data, file, ensure_ascii=False, indent=2)
 
 def PatchPack(pack, patch):
 	patchFiles = glob(path.join(patch, "**"), recursive=True)
