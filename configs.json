@@ -123,8 +123,7 @@
 					"textures": {
 						"delete": true,
 						"ignore": [
-							"classic 3d",
-							"gui"
+							"classic 3d"
 						]
 					},
 					"regenerate_meta": true,

@@ -1,6 +1,8 @@
-import shutil, sys, json, os
+import shutil, sys, json, os, time
+from time import sleep
 from os import path
 from glob import glob
+from threading import Thread
 
 def LoadConfigs():
 	with open("configs.json") as file:
@@ -170,6 +172,55 @@ def RunUser():
 
 	ClearTemp()
 
+def ConfigPacker(config, packDir, version, configsSettings):
+	global NumberOfPackers
+	NumberOfPackers += 1
+	packName = f"{path.basename(packDir)} v{version} - {config}"
+	print(f"Config: {packName}")
+
+	tempPackDir = path.join(TempDir, packName)
+
+	print("Copying...")
+
+	shutil.copytree(packDir, tempPackDir)
+
+	# Delete Textures
+	if configsSettings[config]["textures"]["delete"]:
+		print("Deleting textures...")
+		Delete(tempPackDir, "textures", configsSettings[config]["textures"]["ignore"])
+
+	# Regenerate Meta
+	if configsSettings[config]["regenerate_meta"]:
+		print("Regenerating meta...")
+		RegenerateMeta(tempPackDir, configsSettings[config]["mc_version"])
+
+	# Patch
+	if len(configsSettings[config]["patches"]) > 0:
+		print("Applying patches...")
+		patches = configsSettings[config]["patches"]
+
+		for patch in patches:
+			print(f"Applying: {patch}")
+			patchDir = FilterSelection(Packs, patch)
+			PatchPack(tempPackDir, patchDir)
+
+	# Zip files
+	print(f"Zipping...")
+	shutil.make_archive(tempPackDir, "zip", tempPackDir)
+
+	# Move to out
+	if path.exists(path.normpath(path.join(OutDir, packName + ".zip"))):
+		if configsSettings[config]["overwrite"]:
+			os.remove(path.normpath(path.join(OutDir, packName + ".zip")))
+			shutil.move(path.normpath(tempPackDir + ".zip"), OutDir)
+
+			print(f"Completed pack sent to: {OutDir}")
+	else:
+		shutil.move(path.normpath(tempPackDir + ".zip"), OutDir)
+		print(f"Completed pack sent to: {OutDir}")
+
+	NumberOfPackers -= 1
+
 def RunConfig():
 	configs = LoadConfigs()
 
@@ -185,51 +236,18 @@ def RunConfig():
 
 	ClearTemp()
 
+	startTime = time.time()
+
 	for config in configsSettings:
-		packName = f"{path.basename(packDir)} v{version} - {config}"
-		print(f"Config: {packName}")
+		thread = Thread(target=ConfigPacker, args=[config, packDir, version, configsSettings])
+		thread.start()
+		#ConfigPacker(config, packDir, version, configsSettings)
+	
+	while(NumberOfPackers > 0):
+		sleep(0.1)
 
-		tempPackDir = path.join(TempDir, packName)
-
-		print("Copying...")
-
-		shutil.copytree(packDir, tempPackDir)
-
-		# Delete Textures
-		if configsSettings[config]["textures"]["delete"]:
-			print("Deleting textures...")
-			Delete(tempPackDir, "textures", configsSettings[config]["textures"]["ignore"])
-
-		# Regenerate Meta
-		if configsSettings[config]["regenerate_meta"]:
-			print("Regenerating meta...")
-			RegenerateMeta(tempPackDir, configsSettings[config]["mc_version"])
-
-		# Patch
-		if len(configsSettings[config]["patches"]) >= 0:
-			print("Applying patches...")
-			patches = configsSettings[config]["patches"]
-
-			for patch in patches:
-				print(f"Applying: {patch}")
-				patchDir = FilterSelection(Packs, patch)
-				PatchPack(tempPackDir, patchDir)
-
-		# Zip files
-		print(f"Zipping...")
-		shutil.make_archive(tempPackDir, "zip", tempPackDir)
-
-		# Move to out
-		if path.exists(path.normpath(path.join(OutDir, packName + ".zip"))):
-			if configsSettings[config]["overwrite"]:
-				os.remove(path.normpath(path.join(OutDir, packName + ".zip")))
-				shutil.move(path.normpath(tempPackDir + ".zip"), OutDir)
-
-				print(f"Completed pack sent to: {OutDir}")
-		else:
-			shutil.move(path.normpath(tempPackDir + ".zip"), OutDir)
-			print(f"Completed pack sent to: {OutDir}")
-
+	print(f"Time: {time.time() - startTime} Seconds")
+	
 	ClearTemp()
 
 # Loads settings.json
@@ -243,6 +261,8 @@ OutDir = path.normpath(path.abspath(path.expanduser(Settings["locations"]["out"]
 Packs = glob(ResourcePackFolderDir, recursive=False)
 
 RunType = input("Run as user or config: ").lower()
+
+NumberOfPackers = 0
 
 if RunType == "user":
 	RunUser()
