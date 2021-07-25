@@ -53,6 +53,22 @@
 					"overwrite": true
 				}
 			}
+		},
+		"Classic 3D - Mod Support": {
+			"configs": {
+				"1.16": {
+					"mc_version": "1.16",
+					"textures": {
+						"delete": true,
+						"ignore": "classic 3d"
+					},
+					"regenerate_meta": true,
+					"patches": {
+						"patch": false
+					},
+					"overwrite": true
+				}
+			}
 		}
 	}
 }
