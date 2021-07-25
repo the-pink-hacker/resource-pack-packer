@@ -6,7 +6,10 @@
 					"mc_version": "1.17",
 					"textures": {
 						"delete": true,
-						"ignore": "3d"
+						"ignore": [
+							"3d",
+							"gui"
+						]
 					},
 					"regenerate_meta": true,
 					"patches": {
@@ -18,7 +21,10 @@
 					"mc_version": "1.16",
 					"textures": {
 						"delete": true,
-						"ignore": "3d"
+						"ignore": [
+							"3d",
+							"gui"
+						]
 					},
 					"regenerate_meta": true,
 					"patches": {
@@ -30,7 +36,10 @@
 					"mc_version": "1.15",
 					"textures": {
 						"delete": true,
-						"ignore": "3d"
+						"ignore": [
+							"3d",
+							"gui"
+						]
 					},
 					"regenerate_meta": true,
 					"patches": {
@@ -43,7 +52,10 @@
 					"mc_version": "1.13",
 					"textures": {
 						"delete": true,
-						"ignore": "3d"
+						"ignore": [
+							"3d",
+							"gui"
+						]
 					},
 					"regenerate_meta": true,
 					"patches": {
@@ -60,7 +72,10 @@
 					"mc_version": "1.17",
 					"textures": {
 						"delete": true,
-						"ignore": "3d"
+						"ignore": [
+							"3d",
+							"gui"
+						]
 					},
 					"regenerate_meta": true,
 					"patches": {
@@ -72,7 +87,10 @@
 					"mc_version": "1.16",
 					"textures": {
 						"delete": true,
-						"ignore": "3d"
+						"ignore": [
+							"3d",
+							"gui"
+						]
 					},
 					"regenerate_meta": true,
 					"patches": {
@@ -84,7 +102,10 @@
 					"mc_version": "1.15",
 					"textures": {
 						"delete": true,
-						"ignore": "3d"
+						"ignore": [
+							"3d",
+							"gui"
+						]
 					},
 					"regenerate_meta": true,
 					"patches": {
@@ -96,7 +117,10 @@
 					"mc_version": "1.13",
 					"textures": {
 						"delete": true,
-						"ignore": "3d"
+						"ignore": [
+							"3d",
+							"gui"
+						]
 					},
 					"regenerate_meta": true,
 					"patches": {
@@ -112,7 +136,10 @@
 					"mc_version": "1.16",
 					"textures": {
 						"delete": true,
-						"ignore": "classic 3d"
+						"ignore": [
+							"classic 3d",
+							"gui"
+						]
 					},
 					"regenerate_meta": true,
 					"patches": {

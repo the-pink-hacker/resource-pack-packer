@@ -37,7 +37,7 @@ def ClearTemp():
 		print("Clearing Temp...")
 		shutil.rmtree(TempDir)
 
-def Delete(dir, folder, ignore=None):
+def Delete(dir, folder, ignore):
 	namespaces = glob(path.join(dir, "assets", "*"))
 
 	for namespace in namespaces:
@@ -45,7 +45,12 @@ def Delete(dir, folder, ignore=None):
 			folders = glob(path.join(namespace, folder, "*"))
 
 			for fold in folders:
-				if path.basename(fold) != ignore.lower():
+				delete = True
+				for ig in ignore:
+					if path.basename(fold) == ig.lower():
+						delete = False
+
+				if delete:
 					shutil.rmtree(fold)
 			print(f"Deleted {path.basename(namespace)}'s Textures")
 
@@ -135,7 +140,7 @@ def RunUser():
 
 		print("Deleting Files...")
 
-		Delete(FullPackName, "textures", Ignore)
+		Delete(FullPackName, "textures", {Ignore})
 
 	if input("Regenerate pack.mcmeta? y/n\n").lower() == "y":
 		RegenerateMeta(FullPackName, MCVersion)
