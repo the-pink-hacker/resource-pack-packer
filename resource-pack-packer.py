@@ -206,10 +206,14 @@ def RunConfig():
 			RegenerateMeta(tempPackDir, configsSettings[config]["mc_version"])
 
 		# Patch
-		if configsSettings[config]["patches"]["patch"]:
+		if len(configsSettings[config]["patches"]) >= 0:
 			print("Applying patches...")
-			patch = FilterSelection(Packs, configsSettings[config]["patches"]["patches"])
-			PatchPack(tempPackDir, patch)
+			patches = configsSettings[config]["patches"]
+
+			for patch in patches:
+				print(f"Applying: {patch}")
+				patchDir = FilterSelection(Packs, patch)
+				PatchPack(tempPackDir, patchDir)
 
 		# Zip files
 		print(f"Zipping...")
