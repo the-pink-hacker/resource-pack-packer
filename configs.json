@@ -1,0 +1,58 @@
+{
+	"packs": {
+		"Classic 3D": {
+			"configs": {
+				"1.17": {
+					"mc_version": "1.17",
+					"textures": {
+						"delete": true,
+						"ignore": "3d"
+					},
+					"regenerate_meta": true,
+					"patches": {
+						"patch": false
+					},
+					"overwrite": true
+				},
+				"1.16": {
+					"mc_version": "1.16",
+					"textures": {
+						"delete": true,
+						"ignore": "3d"
+					},
+					"regenerate_meta": true,
+					"patches": {
+						"patch": false
+					},
+					"overwrite": true
+				},
+				"1.15": {
+					"mc_version": "1.15",
+					"textures": {
+						"delete": true,
+						"ignore": "3d"
+					},
+					"regenerate_meta": true,
+					"patches": {
+						"patch": true,
+						"patches": "Classic 3D - 1.15 wall patch"
+					},
+					"overwrite": true
+				},
+				"1.13-1.14": {
+					"mc_version": "1.13",
+					"textures": {
+						"delete": true,
+						"ignore": "3d"
+					},
+					"regenerate_meta": true,
+					"patches": {
+						"patch": true,
+						"patches": "Classic 3D - 1.15 wall patch"
+					},
+					"overwrite": true
+				}
+			}
+		}
+	}
+}
