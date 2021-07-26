@@ -113,6 +113,27 @@ def PatchPack(pack, patch):
 def GetConfig(data, pack):
 	return data["packs"][pack]["configs"]
 
+def ZipPacks():
+	# Zip files
+	print(f"Zipping...")
+
+	packs = glob(path.join(TempDir, "*"))
+
+	for pack in packs:
+		shutil.make_archive(pack, "zip", pack)
+
+		packName = path.basename(pack)
+
+		# Move to out
+		if path.exists(path.normpath(path.join(OutDir, packName + ".zip"))):
+			os.remove(path.normpath(path.join(OutDir, packName + ".zip")))
+			shutil.move(path.normpath(pack + ".zip"), OutDir)
+
+			print(f"Completed pack sent to: {OutDir}")
+		else:
+			shutil.move(path.normpath(pack + ".zip"), OutDir)
+			print(f"Completed pack sent to: {OutDir}")
+
 def RunUser():
 	SelectedPack = input("Pack Name: ")
 
@@ -204,21 +225,6 @@ def ConfigPacker(config, packDir, version, configsSettings):
 			patchDir = FilterSelection(Packs, patch)
 			PatchPack(tempPackDir, patchDir)
 
-	# Zip files
-	print(f"Zipping...")
-	shutil.make_archive(tempPackDir, "zip", tempPackDir)
-
-	# Move to out
-	if path.exists(path.normpath(path.join(OutDir, packName + ".zip"))):
-		if configsSettings[config]["overwrite"]:
-			os.remove(path.normpath(path.join(OutDir, packName + ".zip")))
-			shutil.move(path.normpath(tempPackDir + ".zip"), OutDir)
-
-			print(f"Completed pack sent to: {OutDir}")
-	else:
-		shutil.move(path.normpath(tempPackDir + ".zip"), OutDir)
-		print(f"Completed pack sent to: {OutDir}")
-
 	NumberOfPackers -= 1
 
 def RunConfig():
@@ -245,6 +251,8 @@ def RunConfig():
 	
 	while(NumberOfPackers > 0):
 		sleep(0.1)
+
+	ZipPacks()
 
 	print(f"Time: {time.time() - startTime} Seconds")
 	

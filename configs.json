@@ -12,8 +12,7 @@
 						]
 					},
 					"regenerate_meta": true,
-					"patches": [],
-					"overwrite": true
+					"patches": []
 				},
 				"1.16": {
 					"mc_version": "1.16",
@@ -25,8 +24,7 @@
 						]
 					},
 					"regenerate_meta": true,
-					"patches": [],
-					"overwrite": true
+					"patches": []
 				},
 				"1.15": {
 					"mc_version": "1.15",
@@ -40,8 +38,7 @@
 					"regenerate_meta": true,
 					"patches": [
 						"Classic 3D - 1.15 wall patch"
-					],
-					"overwrite": true
+					]
 				},
 				"1.13-1.14": {
 					"mc_version": "1.13",
@@ -55,8 +52,7 @@
 					"regenerate_meta": true,
 					"patches": [
 						"Classic 3D - 1.15 wall patch"
-					],
-					"overwrite": true
+					]
 				}
 			}
 		},
@@ -72,8 +68,7 @@
 						]
 					},
 					"regenerate_meta": true,
-					"patches": [],
-					"overwrite": true
+					"patches": []
 				},
 				"1.16": {
 					"mc_version": "1.16",
@@ -85,8 +80,7 @@
 						]
 					},
 					"regenerate_meta": true,
-					"patches": [],
-					"overwrite": true
+					"patches": []
 				},
 				"1.15": {
 					"mc_version": "1.15",
@@ -98,8 +92,7 @@
 						]
 					},
 					"regenerate_meta": true,
-					"patches": [],
-					"overwrite": true
+					"patches": []
 				},
 				"1.13-1.14": {
 					"mc_version": "1.13",
@@ -111,8 +104,7 @@
 						]
 					},
 					"regenerate_meta": true,
-					"patches": [],
-					"overwrite": true
+					"patches": []
 				}
 			}
 		},
@@ -127,8 +119,7 @@
 						]
 					},
 					"regenerate_meta": true,
-					"patches": [],
-					"overwrite": true
+					"patches": []
 				}
 			}
 		}
