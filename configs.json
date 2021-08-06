@@ -5,7 +5,11 @@
 				"1.17": {
 					"mc_version": "1.17",
 					"textures": {
-						"delete": false
+						"delete": true,
+						"ignore": [
+							"3d",
+							"gui"
+						]
 					},
 					"regenerate_meta": true,
 					"patches": []
@@ -13,29 +17,61 @@
 				"1.16": {
 					"mc_version": "1.16",
 					"textures": {
-						"delete": false
+						"delete": true,
+						"ignore": [
+							"3d",
+							"gui"
+						]
 					},
 					"regenerate_meta": true,
-					"patches": []
+					"patches": [
+						"Classic 3D - 1.16 ores patch"
+					]
 				},
 				"1.15": {
 					"mc_version": "1.15",
 					"textures": {
-						"delete": false
+						"delete": true,
+						"ignore": [
+							"3d",
+							"gui"
+						]
 					},
 					"regenerate_meta": true,
 					"patches": [
-						"Classic 3D - 1.15 wall patch"
+						"Classic 3D - 1.15 wall patch",
+						"Classic 3D - 1.16 ores patch"
 					]
 				},
-				"1.13-1.14": {
-					"mc_version": "1.13",
+				"1.14": {
+					"mc_version": "1.14",
 					"textures": {
-						"delete": false
+						"delete": true,
+						"ignore": [
+							"3d",
+							"gui"
+						]
 					},
 					"regenerate_meta": true,
 					"patches": [
-						"Classic 3D - 1.15 wall patch"
+						"Classic 3D - 1.15 wall patch",
+						"Classic 3D - 1.16 ores patch"
+					]
+				},
+				"1.13": {
+					"mc_version": "1.13",
+					"textures": {
+						"delete": true,
+						"ignore": [
+							"3d",
+							"gui"
+						]
+					},
+					"regenerate_meta": true,
+					"patches": [
+						"Classic 3D - 1.13 texture patch",
+						"Classic 3D - 1.15 wall patch",
+						"Classic 3D - 1.16 ores patch"
 					]
 				}
 			}
@@ -45,7 +81,11 @@
 				"1.17": {
 					"mc_version": "1.17",
 					"textures": {
-						"delete": false
+						"delete": true,
+						"ignore": [
+							"3d",
+							"gui"
+						]
 					},
 					"regenerate_meta": true,
 					"patches": []
@@ -53,26 +93,44 @@
 				"1.16": {
 					"mc_version": "1.16",
 					"textures": {
-						"delete": false
+						"delete": true,
+						"ignore": [
+							"3d",
+							"gui"
+						]
 					},
 					"regenerate_meta": true,
-					"patches": []
+					"patches": [
+						"Classic 3D - 1.16 ores patch"
+					]
 				},
 				"1.15": {
 					"mc_version": "1.15",
 					"textures": {
-						"delete": false
+						"delete": true,
+						"ignore": [
+							"3d",
+							"gui"
+						]
 					},
 					"regenerate_meta": true,
-					"patches": []
+					"patches": [
+						"Classic 3D - 1.16 ores patch"
+					]
 				},
 				"1.13-1.14": {
 					"mc_version": "1.13",
 					"textures": {
-						"delete": false
+						"delete": true,
+						"ignore": [
+							"3d",
+							"gui"
+						]
 					},
 					"regenerate_meta": true,
-					"patches": []
+					"patches": [
+						"Classic 3D - 1.16 ores patch"
+					]
 				}
 			}
 		},

@@ -3,24 +3,10 @@ from time import sleep
 from os import path
 from glob import glob
 from threading import Thread
+from settings import Settings
 
 def LoadConfigs():
 	with open("configs.json") as file:
-		return json.load(file)
-
-def LoadSettings():
-	if not path.exists("settings.json"):
-		with open("settings.json", "x") as file:	
-			data = {
-	"locations": {
-		"pack_folder": path.normpath(path.join(path.abspath(path.expanduser(input("Minecraft Folder: "))), "resourcepacks")),
-		"temp": "temp",
-		"out": path.normpath(path.abspath(path.expanduser(input("Output Folder: "))))
-		}
-}
-			json.dump(data, file, indent="\t")
-
-	with open("settings.json", "r") as file:
 		return json.load(file)
 
 def FilterSelection(packs, selected):
@@ -247,7 +233,6 @@ def RunConfig():
 	for config in configsSettings:
 		thread = Thread(target=ConfigPacker, args=[config, packDir, version, configsSettings])
 		thread.start()
-		#ConfigPacker(config, packDir, version, configsSettings)
 	
 	while(NumberOfPackers > 0):
 		sleep(0.1)
@@ -259,11 +244,11 @@ def RunConfig():
 	ClearTemp()
 
 # Loads settings.json
-Settings = LoadSettings()
+settings = Settings().data
 
-ResourcePackFolderDir = path.normpath(path.join(path.abspath(path.expanduser(Settings["locations"]["pack_folder"])), "*"))
-TempDir = path.normpath(path.abspath(path.expanduser(Settings["locations"]["temp"])))
-OutDir = path.normpath(path.abspath(path.expanduser(Settings["locations"]["out"])))
+ResourcePackFolderDir = path.normpath(path.join(path.abspath(path.expanduser(settings["locations"]["pack_folder"])), "*"))
+TempDir = path.normpath(path.abspath(path.expanduser(settings["locations"]["temp"])))
+OutDir = path.normpath(path.abspath(path.expanduser(settings["locations"]["out"])))
 
 # Gets all packs
 Packs = glob(ResourcePackFolderDir, recursive=False)
