@@ -82,15 +82,20 @@ def PatchPack(pack, patch):
 	patchFiles = glob(path.join(patch, "**"), recursive=True)
 
 	for file in patchFiles:
-		# Removes all files in pack that are in the patch
+		# The location that the file should go to
 		packFile = file.replace(patch, pack)
 
+		# Removes all files in pack that are in the patch
 		if path.isfile(packFile) and path.exists(packFile):
 			os.remove(packFile)
 
 		# Applies patch
-		if path.isfile(file):
-			shutil.copy(file, packFile)
+		if path.isfile(file) and path.exists(file):
+			try:
+				shutil.copy(file, packFile)
+			except IOError:
+				os.makedirs(path.dirname(packFile))
+				shutil.copy(file, packFile)
 
 def GetConfig(data, pack):
 	return data["packs"][pack]["configs"]
