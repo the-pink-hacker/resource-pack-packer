@@ -3,11 +3,7 @@ from time import sleep
 from os import path
 from glob import glob
 from threading import Thread
-from settings import Settings
-
-def LoadConfigs():
-	with open("configs.json") as file:
-		return json.load(file)
+from settings import *
 
 def FilterSelection(packs, selected):
 	for pack in packs:
@@ -214,7 +210,7 @@ def ConfigPacker(config, packDir, version, configsSettings):
 	NumberOfPackers -= 1
 
 def RunConfig():
-	configs = LoadConfigs()
+	configs = Configs().data
 
 	pack = input("Pack Name: ")
 	

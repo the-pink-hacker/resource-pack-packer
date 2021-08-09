@@ -15,7 +15,10 @@ class Settings:
 }
 			json.dump(data, file, indent="\t")
 
-	with open("settings.json", "r") as file:
-		data = json.load(file)
+		with open("settings.json", "r") as file:
+			self.data = json.load(file)
 
-#class Config:
+class Configs:
+	def __init__(self):
+		with open("configs.json") as file:
+			self.data = json.load(file)
