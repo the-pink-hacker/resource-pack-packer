@@ -97,9 +97,6 @@ def PatchPack(pack, patch):
 				os.makedirs(path.dirname(packFile))
 				shutil.copy(file, packFile)
 
-def GetConfig(data, pack):
-	return data["packs"][pack]["configs"]
-
 def ZipPacks():
 	# Zip files
 	print(f"Zipping...")
@@ -193,17 +190,18 @@ def ConfigPacker(config, packDir, version, configsSettings):
 	shutil.copytree(packDir, tempPackDir)
 
 	# Delete Textures
-	if configsSettings[config]["textures"]["delete"]:
-		print("Deleting textures...")
-		Delete(tempPackDir, "textures", configsSettings[config]["textures"]["ignore"])
+	if Configs.check_option(configsSettings[config]["textures"]):
+		if Configs.check_option(configsSettings[config]["textures"]["delete"]) and configsSettings[config]["textures"]["delete"]:
+			print("Deleting textures...")
+			Delete(tempPackDir, "textures", configsSettings[config]["textures"]["ignore"])
 
 	# Regenerate Meta
-	if configsSettings[config]["regenerate_meta"]:
+	if Configs.check_option(configsSettings[config]["regenerate_meta"]) and configsSettings[config]["regenerate_meta"]:
 		print("Regenerating meta...")
 		RegenerateMeta(tempPackDir, configsSettings[config]["mc_version"])
 
 	# Patch
-	if len(configsSettings[config]["patches"]) > 0:
+	if Configs.check_option(configsSettings[config]["patches"]) and len(configsSettings[config]["patches"]) > 0:
 		print("Applying patches...")
 		patches = configsSettings[config]["patches"]
 
@@ -225,7 +223,7 @@ def RunConfig():
 
 	version = input("Version: ")
 
-	configsSettings = GetConfig(configs, pack)
+	configsSettings = Configs.get_config(configs, pack)
 
 	ClearTemp()
 

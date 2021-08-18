@@ -13,7 +13,7 @@ class Settings:
 		"out": path.normpath(path.abspath(path.expanduser(input("Output Folder: "))))
 		}
 }
-			json.dump(data, file, indent="\t")
+				json.dump(data, file, indent="\t")
 
 		with open("settings.json", "r") as file:
 			self.data = json.load(file)
@@ -22,3 +22,14 @@ class Configs:
 	def __init__(self):
 		with open("configs.json") as file:
 			self.data = json.load(file)
+
+	def get_config(data, pack):
+		return data["packs"][pack]["configs"]
+
+	def check_option(option):
+		try:
+			if option != None:
+				return True
+		except KeyError:
+			return None
+		return None
