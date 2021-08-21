@@ -245,9 +245,9 @@ def RunConfig():
 # Loads settings.json
 settings = Settings().data
 
-ResourcePackFolderDir = path.normpath(path.join(path.abspath(path.expanduser(settings["locations"]["pack_folder"])), "*"))
-TempDir = path.normpath(path.abspath(path.expanduser(settings["locations"]["temp"])))
-OutDir = path.normpath(path.abspath(path.expanduser(settings["locations"]["out"])))
+ResourcePackFolderDir = path.join(Settings.parse_dir(settings["locations"]["pack_folder"]), "*")
+TempDir = Settings.parse_dir(settings["locations"]["temp"])
+OutDir = Settings.parse_dir(settings["locations"]["out"])
 
 # Gets all packs
 Packs = glob(ResourcePackFolderDir, recursive=False)

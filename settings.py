@@ -18,6 +18,9 @@ class Settings:
 		with open("settings.json", "r") as file:
 			self.data = json.load(file)
 
+	def parse_dir(dir):
+		return path.normpath(path.abspath(path.expanduser(dir)))
+
 class Configs:
 	def __init__(self):
 		with open("configs.json") as file:
