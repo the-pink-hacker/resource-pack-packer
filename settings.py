@@ -26,10 +26,8 @@ class Configs:
 	def get_config(data, pack):
 		return data["packs"][pack]["configs"]
 
-	def check_option(option):
-		try:
-			if option != None:
-				return True
-		except KeyError:
-			return None
-		return None
+	def check_option(root, option):
+		if option in root:
+			return True
+		else:
+			return False
