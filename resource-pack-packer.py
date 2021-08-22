@@ -5,242 +5,256 @@ from glob import glob
 from threading import Thread
 from settings import *
 
+
 def FilterSelection(packs, selected):
-	for pack in packs:
-		# Checks for match
-		if selected in pack:
-			return pack
-		# Checks for close match
-		if selected.lower() in pack.lower():
-			return pack
-	print(f"Could not find: {selected}")
-	return None
+    for pack in packs:
+        # Checks for match
+        if selected in pack:
+            return pack
+        # Checks for close match
+        if selected.lower() in pack.lower():
+            return pack
+    print(f"Could not find: {selected}")
+    return None
+
 
 def ClearTemp():
-	if path.exists(TempDir):
-		print("Clearing Temp...")
-		shutil.rmtree(TempDir)
+    if path.exists(TempDir):
+        print("Clearing Temp...")
+        shutil.rmtree(TempDir)
+
 
 def Delete(dir, folder, ignore):
-	namespaces = glob(path.join(dir, "assets", "*"))
+    namespaces = glob(path.join(dir, "assets", "*"))
 
-	for namespace in namespaces:
-		if path.exists(path.join(namespace, folder)):
-			folders = glob(path.join(namespace, folder, "*"))
+    for namespace in namespaces:
+        if path.exists(path.join(namespace, folder)):
+            folders = glob(path.join(namespace, folder, "*"))
 
-			for fold in folders:
-				delete = True
-				for ig in ignore:
-					if path.basename(fold) == ig.lower():
-						delete = False
+            for fold in folders:
+                delete = True
+                for ig in ignore:
+                    if path.basename(fold) == ig.lower():
+                        delete = False
 
-				if delete:
-					shutil.rmtree(fold)
-			print(f"Deleted {path.basename(namespace)}'s Textures")
+                if delete:
+                    shutil.rmtree(fold)
+            print(f"Deleted {path.basename(namespace)}'s Textures")
+
 
 def AutoPackCheck(version, index, defaultValue=0):
-	try:
-		return int(version.split(".")[index])
-	except:
-		return 0
+    try:
+        return int(version.split(".")[index])
+    except:
+        return 0
+
 
 def AutoPack(version):
-	version = str(version)
-	if AutoPackCheck(version, 1) >= 17:
-		return AutoPackCheck(version, 1) - 10
-	elif AutoPackCheck(version, 1) == 16:
-		return 6
-	elif AutoPackCheck(version, 1) >= 15:
-		return 5
-	elif AutoPackCheck(version, 1) >= 13:
-		return 4
-	elif AutoPackCheck(version, 1) >= 11:
-		return 3
-	elif AutoPackCheck(version, 1) >= 9:
-		return 2
-	elif AutoPackCheck(version, 1) >= 7:
-		return 1
-	elif AutoPackCheck(version, 1) >= 6:
-		if AutoPackCheck(version, 2) == 1:
-			return 1
-	return 0
+    version = str(version)
+    if AutoPackCheck(version, 1) >= 17:
+        return AutoPackCheck(version, 1) - 10
+    elif AutoPackCheck(version, 1) == 16:
+        return 6
+    elif AutoPackCheck(version, 1) >= 15:
+        return 5
+    elif AutoPackCheck(version, 1) >= 13:
+        return 4
+    elif AutoPackCheck(version, 1) >= 11:
+        return 3
+    elif AutoPackCheck(version, 1) >= 9:
+        return 2
+    elif AutoPackCheck(version, 1) >= 7:
+        return 1
+    elif AutoPackCheck(version, 1) >= 6:
+        if AutoPackCheck(version, 2) == 1:
+            return 1
+    return 0
+
 
 def RegenerateMeta(dir, version):
-	packFormat = AutoPack(version)
-	print(f"Pack Format: {packFormat}")
-	
-	with open(path.join(dir, "pack.mcmeta"), "r") as file:
-		data = json.load(file)
+    packFormat = AutoPack(version)
+    print(f"Pack Format: {packFormat}")
 
-	with open(path.join(dir, "pack.mcmeta"), "w", newline="\n") as file:
-		if data["pack"]["pack_format"] != packFormat:
-			data["pack"]["pack_format"] = packFormat
+    with open(path.join(dir, "pack.mcmeta"), "r") as file:
+        data = json.load(file)
 
-		json.dump(data, file, ensure_ascii=False, indent=2)
+    with open(path.join(dir, "pack.mcmeta"), "w", newline="\n") as file:
+        if data["pack"]["pack_format"] != packFormat:
+            data["pack"]["pack_format"] = packFormat
+
+        json.dump(data, file, ensure_ascii=False, indent=2)
+
 
 def PatchPack(pack, patch):
-	patchFiles = glob(path.join(patch, "**"), recursive=True)
+    patchFiles = glob(path.join(patch, "**"), recursive=True)
 
-	for file in patchFiles:
-		# The location that the file should go to
-		packFile = file.replace(patch, pack)
+    for file in patchFiles:
+        # The location that the file should go to
+        packFile = file.replace(patch, pack)
 
-		# Removes all files in pack that are in the patch
-		if path.isfile(packFile) and path.exists(packFile):
-			os.remove(packFile)
+        # Removes all files in pack that are in the patch
+        if path.isfile(packFile) and path.exists(packFile):
+            os.remove(packFile)
 
-		# Applies patch
-		if path.isfile(file) and path.exists(file):
-			try:
-				shutil.copy(file, packFile)
-			except IOError:
-				os.makedirs(path.dirname(packFile))
-				shutil.copy(file, packFile)
+        # Applies patch
+        if path.isfile(file) and path.exists(file):
+            try:
+                shutil.copy(file, packFile)
+            except IOError:
+                os.makedirs(path.dirname(packFile))
+                shutil.copy(file, packFile)
+
 
 def ZipPacks():
-	# Zip files
-	print(f"Zipping...")
+    # Zip files
+    print(f"Zipping...")
 
-	packs = glob(path.join(TempDir, "*"))
+    packs = glob(path.join(TempDir, "*"))
 
-	for pack in packs:
-		shutil.make_archive(pack, "zip", pack)
+    for pack in packs:
+        shutil.make_archive(pack, "zip", pack)
 
-		packName = path.basename(pack)
+        packName = path.basename(pack)
 
-		# Move to out
-		if path.exists(path.normpath(path.join(OutDir, packName + ".zip"))):
-			os.remove(path.normpath(path.join(OutDir, packName + ".zip")))
-			shutil.move(path.normpath(pack + ".zip"), OutDir)
+        # Move to out
+        if path.exists(path.normpath(path.join(OutDir, packName + ".zip"))):
+            os.remove(path.normpath(path.join(OutDir, packName + ".zip")))
+            shutil.move(path.normpath(pack + ".zip"), OutDir)
 
-			print(f"Completed pack sent to: {OutDir}")
-		else:
-			shutil.move(path.normpath(pack + ".zip"), OutDir)
-			print(f"Completed pack sent to: {OutDir}")
+            print(f"Completed pack sent to: {OutDir}")
+        else:
+            shutil.move(path.normpath(pack + ".zip"), OutDir)
+            print(f"Completed pack sent to: {OutDir}")
+
 
 def RunUser():
-	SelectedPack = input("Pack Name: ")
+    SelectedPack = input("Pack Name: ")
 
-	SelectedPack = FilterSelection(Packs, SelectedPack)
+    SelectedPack = FilterSelection(Packs, SelectedPack)
 
-	print(f"Selected Pack: {SelectedPack}")
+    print(f"Selected Pack: {SelectedPack}")
 
-	if input("Is this correct? y/n\n").lower() == "n":
-		sys.exit()
+    if input("Is this correct? y/n\n").lower() == "n":
+        sys.exit()
 
-	Version = input("Version: ")
+    Version = input("Version: ")
 
-	MCVersion = input("MC Version: ")
+    MCVersion = input("MC Version: ")
 
-	PackName = f"{path.basename(SelectedPack)} v{Version} - {MCVersion}"
-	FullPackName = path.join(TempDir, PackName)
+    PackName = f"{path.basename(SelectedPack)} v{Version} - {MCVersion}"
+    FullPackName = path.join(TempDir, PackName)
 
-	ClearTemp()
+    ClearTemp()
 
-	print("Copying...")
+    print("Copying...")
 
-	# Copys the pack
-	shutil.copytree(SelectedPack, FullPackName)
+    # Copys the pack
+    shutil.copytree(SelectedPack, FullPackName)
 
-	if input("Delete Texture Files? y/n\n").lower() == "y":
-		Ignore = input("Ignore: ")
+    if input("Delete Texture Files? y/n\n").lower() == "y":
+        Ignore = input("Ignore: ")
 
-		print("Deleting Files...")
+        print("Deleting Files...")
 
-		Delete(FullPackName, "textures", {Ignore})
+        Delete(FullPackName, "textures", {Ignore})
 
-	if input("Regenerate pack.mcmeta? y/n\n").lower() == "y":
-		RegenerateMeta(FullPackName, MCVersion)
+    if input("Regenerate pack.mcmeta? y/n\n").lower() == "y":
+        RegenerateMeta(FullPackName, MCVersion)
 
-	if input("Apply patch? y/n\n").lower() == "y":
-		Patch = FilterSelection(Packs, input("Patches: "))
-		print(f"Selected Patch: {Patch}")
-		print("Patching...")
+    if input("Apply patch? y/n\n").lower() == "y":
+        Patch = FilterSelection(Packs, input("Patches: "))
+        print(f"Selected Patch: {Patch}")
+        print("Patching...")
 
-		PatchPack(FullPackName, Patch)
+        PatchPack(FullPackName, Patch)
 
-	print("Zipping Files...")
+    print("Zipping Files...")
 
-	# Zip files
-	shutil.make_archive(FullPackName, "zip", FullPackName)
+    # Zip files
+    shutil.make_archive(FullPackName, "zip", FullPackName)
 
-	# Move to out
-	if path.exists(path.normpath(path.join(OutDir, PackName + ".zip"))):
-		if input(f"Pack already exists. Do you want to overwrite {path.normpath(path.join(OutDir, PackName + '.zip'))}. y/n\n").lower() == "y":
-			os.remove(path.normpath(path.join(OutDir, PackName + ".zip")))
-			shutil.move(path.normpath(FullPackName + ".zip"), OutDir)
+    # Move to out
+    if path.exists(path.normpath(path.join(OutDir, PackName + ".zip"))):
+        if input(
+                f"Pack already exists. Do you want to overwrite {path.normpath(path.join(OutDir, PackName + '.zip'))}. y/n\n").lower() == "y":
+            os.remove(path.normpath(path.join(OutDir, PackName + ".zip")))
+            shutil.move(path.normpath(FullPackName + ".zip"), OutDir)
 
-			print(f"Completed pack sent to: {OutDir}")
-	else:
-		shutil.move(path.normpath(FullPackName + ".zip"), OutDir)
-		print(f"Completed pack sent to: {OutDir}")
+            print(f"Completed pack sent to: {OutDir}")
+    else:
+        shutil.move(path.normpath(FullPackName + ".zip"), OutDir)
+        print(f"Completed pack sent to: {OutDir}")
 
-	ClearTemp()
+    ClearTemp()
+
 
 def ConfigPacker(config, packDir, version, configsSettings):
-	global NumberOfPackers
-	NumberOfPackers += 1
-	packName = f"{path.basename(packDir)} v{version} - {config}"
-	print(f"Config: {packName}")
+    global NumberOfPackers
+    NumberOfPackers += 1
+    packName = f"{path.basename(packDir)} v{version} - {config}"
+    print(f"Config: {packName}")
 
-	tempPackDir = path.join(TempDir, packName)
+    tempPackDir = path.join(TempDir, packName)
 
-	print("Copying...")
+    print("Copying...")
 
-	shutil.copytree(packDir, tempPackDir)
+    shutil.copytree(packDir, tempPackDir)
 
-	# Delete Textures
-	if Configs.check_option(configsSettings[config], "textures"):
-		if Configs.check_option(configsSettings[config]["textures"], "delete") and configsSettings[config]["textures"]["delete"]:
-			print("Deleting textures...")
-			Delete(tempPackDir, "textures", configsSettings[config]["textures"]["ignore"])
+    # Delete Textures
+    if Configs.check_option(configsSettings[config], "textures"):
+        if Configs.check_option(configsSettings[config]["textures"], "delete") and configsSettings[config]["textures"][
+            "delete"]:
+            print("Deleting textures...")
+            Delete(tempPackDir, "textures", configsSettings[config]["textures"]["ignore"])
 
-	# Regenerate Meta
-	if Configs.check_option(configsSettings[config], "regenerate_meta") and configsSettings[config]["regenerate_meta"]:
-		print("Regenerating meta...")
-		RegenerateMeta(tempPackDir, configsSettings[config]["mc_version"])
+    # Regenerate Meta
+    if Configs.check_option(configsSettings[config], "regenerate_meta") and configsSettings[config]["regenerate_meta"]:
+        print("Regenerating meta...")
+        RegenerateMeta(tempPackDir, configsSettings[config]["mc_version"])
 
-	# Patch
-	if Configs.check_option(configsSettings[config], "patches") and len(configsSettings[config]["patches"]) > 0:
-		print("Applying patches...")
-		patches = configsSettings[config]["patches"]
+    # Patch
+    if Configs.check_option(configsSettings[config], "patches") and len(configsSettings[config]["patches"]) > 0:
+        print("Applying patches...")
+        patches = configsSettings[config]["patches"]
 
-		for patch in patches:
-			print(f"Applying: {patch}")
-			patchDir = FilterSelection(Packs, patch)
-			PatchPack(tempPackDir, patchDir)
+        for patch in patches:
+            print(f"Applying: {patch}")
+            patchDir = FilterSelection(Packs, patch)
+            PatchPack(tempPackDir, patchDir)
 
-	NumberOfPackers -= 1
+    NumberOfPackers -= 1
+
 
 def RunConfig():
-	configs = Configs().data
+    configs = Configs().data
 
-	pack = input("Pack Name: ")
-	
-	packDir = FilterSelection(Packs, pack)
+    pack = input("Pack Name: ")
 
-	print(f"Located Pack: {packDir}")
+    packDir = FilterSelection(Packs, pack)
 
-	version = input("Version: ")
+    print(f"Located Pack: {packDir}")
 
-	configsSettings = Configs.get_config(configs, pack)
+    version = input("Version: ")
 
-	ClearTemp()
+    configsSettings = Configs.get_config(configs, pack)
 
-	startTime = time.time()
+    ClearTemp()
 
-	for config in configsSettings:
-		thread = Thread(target=ConfigPacker, args=[config, packDir, version, configsSettings])
-		thread.start()
-	
-	while(NumberOfPackers > 0):
-		sleep(0.1)
+    startTime = time.time()
 
-	ZipPacks()
+    for config in configsSettings:
+        thread = Thread(target=ConfigPacker, args=[config, packDir, version, configsSettings])
+        thread.start()
 
-	print(f"Time: {time.time() - startTime} Seconds")
-	
-	ClearTemp()
+    while (NumberOfPackers > 0):
+        sleep(0.1)
+
+    ZipPacks()
+
+    print(f"Time: {time.time() - startTime} Seconds")
+
+    ClearTemp()
+
 
 # Loads settings.json
 settings = Settings().data
@@ -257,6 +271,6 @@ RunType = input("Run as user or config: ").lower()
 NumberOfPackers = 0
 
 if RunType == "user":
-	RunUser()
+    RunUser()
 elif RunType == "config":
-	RunConfig()
+    RunConfig()
