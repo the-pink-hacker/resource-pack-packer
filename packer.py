@@ -100,7 +100,7 @@ class Packer:
 
         print(f"Time: {time() - start_time} Seconds")
 
-        clear_temp(self.TEMP_DIR)
+        #clear_temp(self.TEMP_DIR)
 
     def _pack_manual(self):
         """Manually input the option to pack a resource pack"""
@@ -199,17 +199,29 @@ class Packer:
 
         packs = glob(path.join(self.TEMP_DIR, "*"))
 
+        self.packs_zipping = 0
+
         for pack in packs:
-            shutil.make_archive(pack, "zip", pack)
+            thread = Thread(target=self._zip_pack, args=[pack])
+            thread.start()
 
-            pack_name = path.basename(pack)
+        while self.packs_zipping > 0:
+            sleep(0.1)
 
-            # Move to out dir
-            if path.exists(path.normpath(path.join(self.OUT_DIR, pack_name + ".zip"))):
-                os.remove(path.normpath(path.join(self.OUT_DIR, pack_name + ".zip")))
-                shutil.move(path.normpath(pack + ".zip"), self.OUT_DIR)
+    def _zip_pack(self, pack):
+        self.packs_zipping += 1
+        shutil.make_archive(pack, "zip", pack)
 
-                print(f"Completed pack sent to: {self.OUT_DIR}")
-            else:
-                shutil.move(path.normpath(pack + ".zip"), self.OUT_DIR)
-                print(f"Completed pack sent to: {self.OUT_DIR}")
+        pack_name = path.basename(pack)
+
+        # Move to out dir
+        if path.exists(path.normpath(path.join(self.OUT_DIR, pack_name + ".zip"))):
+            os.remove(path.normpath(path.join(self.OUT_DIR, pack_name + ".zip")))
+            shutil.move(path.normpath(pack + ".zip"), self.OUT_DIR)
+
+            print(f"Completed pack sent to: {self.OUT_DIR}")
+        else:
+            shutil.move(path.normpath(pack + ".zip"), self.OUT_DIR)
+            print(f"Completed pack sent to: {self.OUT_DIR}")
+
+        self.packs_zipping -= 1
