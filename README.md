@@ -13,7 +13,7 @@ Minecraft - The folder that contains your resource pack folder.
 
 Output - The folder where you want to send your resource pack to.
 
-Tip: You can use "~/" to represent you user folder. Example "~/downloads" is your downloads folder.
+Tip: You can use "\~/" to represent you user folder. Example "\~/downloads" is your downloads folder.
 
 
 ## General
