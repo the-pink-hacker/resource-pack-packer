@@ -19,7 +19,7 @@ Tip: You can use "~/" to represent you user folder. Example "~/downloads" is you
 ## General
 Manual - You put in all of the settings every time.
 
-Config - A json file tell the program what settings you want. More on this in [Configs](Config)
+Config - A json file tell the program what settings you want. More on this in [Configs](#configs)
 
 
 ## Configs
