@@ -82,6 +82,7 @@ class Packer:
         version = input("Version: ")
 
         self.configs_settings = Configs.get_config(Configs().data, self.pack)
+        print(self.configs_settings)
 
         clear_temp(self.TEMP_DIR)
 
@@ -90,7 +91,7 @@ class Packer:
         self.number_of_packers = 0
 
         for config in self.configs_settings:
-            thread = Thread(target=self._config_pack, args=[config, version])
+            thread = Thread(target=self._pack, args=[config, version])
             thread.start()
 
         while self.number_of_packers > 0:
@@ -100,13 +101,50 @@ class Packer:
 
         print(f"Time: {time() - start_time} Seconds")
 
-        #clear_temp(self.TEMP_DIR)
+        clear_temp(self.TEMP_DIR)
 
     def _pack_manual(self):
         """Manually input the option to pack a resource pack"""
-        pass
+        self.pack = input("Pack Name: ")
 
-    def _config_pack(self, config, version):
+        self.pack_dir = filter_selection(self.PACKS, self.pack)
+
+        print(f"Located Pack: {self.pack_dir}")
+
+        version = input("Resource Pack Version: ")
+        mc_version = input("Minecraft Version: ")
+        delete_textures = input("Delete Textures? y/n: ").lower() == "y"
+
+        ignore_folders = []
+
+        if delete_textures:
+            ignore_folders = input("\tIgnore Folders (use comma and space to separate): ").split(", ")
+
+        regenerate_meta = input("Regenerate Meta? (pack format) y/n: ").lower() == "y"
+
+        patches = []
+
+        if input("Apply patches? y/n: ").lower() == "y":
+            patches = input("\tPatches (use comma and space to separate): ").split(", ")
+
+        clear_temp(self.TEMP_DIR)
+
+        start_time = time()
+
+        self.configs_settings = generate_config(mc_version, delete_textures, ignore_folders, regenerate_meta, patches)
+
+        # _pack expect self.number_of_packs to be set
+        self.number_of_packers = 0
+
+        self._pack(mc_version, version)
+
+        self.zip_packs()
+
+        print(f"Time: {time() - start_time} Seconds")
+
+        clear_temp(self.TEMP_DIR)
+
+    def _pack(self, config, version):
         self.number_of_packers += 1
         pack_name = f"{path.basename(self.pack_dir)} v{version} - {config}"
         print(f"Config: {pack_name}")

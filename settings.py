@@ -24,6 +24,22 @@ class Settings:
         return path.normpath(path.abspath(path.expanduser(dir)))
 
 
+def generate_config(mc_version, delete_textures, ignore_folders, regenerate_meta, patches):
+    data = {
+        mc_version: {
+            "mc_version": mc_version,
+            "textures": {
+                "delete": delete_textures,
+                "ignore": ignore_folders
+            },
+            "regenerate_meta": regenerate_meta,
+            "patches": patches
+        }
+    }
+
+    return data
+
+
 class Configs:
     def __init__(self):
         with open("configs.json") as file:
