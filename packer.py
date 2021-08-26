@@ -5,6 +5,7 @@ from glob import glob
 from threading import Thread
 from time import sleep
 
+from configs import *
 from settings import *
 
 
@@ -81,8 +82,7 @@ class Packer:
 
         version = input("Version: ")
 
-        self.configs_settings = Configs.get_config(Configs().data, self.pack)
-        print(self.configs_settings)
+        self.configs = Configs(self.pack).data["configs"]
 
         clear_temp(self.TEMP_DIR)
 
@@ -90,7 +90,7 @@ class Packer:
 
         self.number_of_packers = 0
 
-        for config in self.configs_settings:
+        for config in self.configs:
             thread = Thread(target=self._pack, args=[config, version])
             thread.start()
 
@@ -100,8 +100,6 @@ class Packer:
         self.zip_packs()
 
         print(f"Time: {time() - start_time} Seconds")
-
-        clear_temp(self.TEMP_DIR)
 
     def _pack_manual(self):
         """Manually input the option to pack a resource pack"""
@@ -131,7 +129,7 @@ class Packer:
 
         start_time = time()
 
-        self.configs_settings = generate_config(mc_version, delete_textures, ignore_folders, regenerate_meta, patches)
+        self.configs = generate_config(mc_version, delete_textures, ignore_folders, regenerate_meta, patches)
 
         # _pack expect self.number_of_packs to be set
         self.number_of_packers = 0
@@ -141,8 +139,6 @@ class Packer:
         self.zip_packs()
 
         print(f"Time: {time() - start_time} Seconds")
-
-        clear_temp(self.TEMP_DIR)
 
     def _pack(self, config, version):
         self.number_of_packers += 1
@@ -157,23 +153,23 @@ class Packer:
         shutil.copytree(self.pack_dir, temp_pack_dir)
 
         # Delete Textures
-        if Configs.check_option(self.configs_settings[config], "textures"):
-            if Configs.check_option(self.configs_settings[config]["textures"], "delete") and \
-                    self.configs_settings[config]["textures"]["delete"]:
+        if Configs.check_option(self.configs[config], "textures"):
+            if Configs.check_option(self.configs[config]["textures"], "delete") and \
+                    self.configs[config]["textures"]["delete"]:
                 print("Deleting textures...")
-                self.delete(temp_pack_dir, "textures", self.configs_settings[config]["textures"]["ignore"])
+                self.delete(temp_pack_dir, "textures", self.configs[config]["textures"]["ignore"])
 
         # Regenerate Meta
-        if Configs.check_option(self.configs_settings[config], "regenerate_meta") and self.configs_settings[config][
+        if Configs.check_option(self.configs[config], "regenerate_meta") and self.configs[config][
             "regenerate_meta"]:
             print("Regenerating meta...")
-            self.regenerate_meta(temp_pack_dir, self.configs_settings[config]["mc_version"])
+            self.regenerate_meta(temp_pack_dir, self.configs[config]["mc_version"])
 
         # Patch
-        if Configs.check_option(self.configs_settings[config], "patches") and len(
-                self.configs_settings[config]["patches"]) > 0:
+        if Configs.check_option(self.configs[config], "patches") and len(
+                self.configs[config]["patches"]) > 0:
             print("Applying patches...")
-            patches = self.configs_settings[config]["patches"]
+            patches = self.configs[config]["patches"]
 
             for patch in patches:
                 print(f"Applying: {patch}")

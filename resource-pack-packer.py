@@ -4,9 +4,9 @@ from packer import *
 # Loads settings.json
 settings = Settings().data
 
-RESOURCE_PACK_FOLDER_DIR = path.join(Settings.parse_dir(settings["locations"]["pack_folder"]), "*")
-TEMP_DIR = Settings.parse_dir(settings["locations"]["temp"])
-OUT_DIR = Settings.parse_dir(settings["locations"]["out"])
+RESOURCE_PACK_FOLDER_DIR = path.join(parse_dir(settings["locations"]["pack_folder"]), "*")
+TEMP_DIR = parse_dir(settings["locations"]["temp"])
+OUT_DIR = parse_dir(settings["locations"]["out"])
 
 # Gets all packs
 PACKS = glob(RESOURCE_PACK_FOLDER_DIR, recursive=False)
