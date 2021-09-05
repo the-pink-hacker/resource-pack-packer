@@ -1,6 +1,14 @@
 import json
 from glob import glob
 from os import path
+from settings import _parse_keyword
+
+
+def parse_name_scheme_keywords(scheme, name, version, mc_version):
+    scheme = _parse_keyword(scheme, "name", name)
+    scheme = _parse_keyword(scheme, "version", version)
+    scheme = _parse_keyword(scheme, "mcversion", mc_version)
+    return scheme
 
 
 def _get_config_file(pack):

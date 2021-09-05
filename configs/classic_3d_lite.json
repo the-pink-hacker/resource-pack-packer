@@ -1,5 +1,6 @@
 {
-	"directory": "#packdir/§6§lClassic 3D - Lite",
+	"directory": "#packdir/Classic 3D - Lite",
+	"name_scheme": "§6§l#name v#version - #mcversion",
 	"configs": {
 		"1.17": {
 			"mc_version": "1.17",

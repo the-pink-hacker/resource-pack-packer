@@ -143,7 +143,7 @@ class Packer:
 
     def _pack(self, config, version):
         self.number_of_packers += 1
-        pack_name = f"{path.basename(self.pack_dir)} v{version} - {config}"
+        pack_name = parse_name_scheme_keywords(self.config_file["name_scheme"], path.basename(self.pack_dir), version, self.configs[config]["mc_version"])
         print(f"Config: {pack_name}")
 
         temp_pack_dir = path.join(self.TEMP_DIR, pack_name)
