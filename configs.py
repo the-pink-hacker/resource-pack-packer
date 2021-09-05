@@ -27,13 +27,14 @@ def generate_config(mc_version, delete_textures, ignore_folders, regenerate_meta
     return data
 
 
+def check_option(root, option):
+    if option in root:
+        return True
+    else:
+        return False
+
+
 class Configs:
     def __init__(self, pack):
         with open(_get_config_file(pack)) as file:
             self.data = json.load(file)
-
-    def check_option(root, option):
-        if option in root:
-            return True
-        else:
-            return False

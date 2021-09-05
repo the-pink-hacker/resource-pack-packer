@@ -1,5 +1,5 @@
 {
-	"directory": "#packdir//§6§lClassic 3D",
+	"directory": "#packdir/§6§lClassic 3D - Lite",
 	"configs": {
 		"1.17": {
 			"mc_version": "1.17",
@@ -37,26 +37,10 @@
 			},
 			"regenerate_meta": true,
 			"patches": [
-				"Classic 3D - 1.15 wall patch",
 				"Classic 3D - 1.16 ores patch"
 			]
 		},
-		"1.14": {
-			"mc_version": "1.14",
-			"textures": {
-				"delete": true,
-				"ignore": [
-					"3d",
-					"gui"
-				]
-			},
-			"regenerate_meta": true,
-			"patches": [
-				"Classic 3D - 1.15 wall patch",
-				"Classic 3D - 1.16 ores patch"
-			]
-		},
-		"1.13": {
+		"1.13-1.14": {
 			"mc_version": "1.13",
 			"textures": {
 				"delete": true,
@@ -67,8 +51,6 @@
 			},
 			"regenerate_meta": true,
 			"patches": [
-				"Classic 3D - 1.13 texture patch",
-				"Classic 3D - 1.15 wall patch",
 				"Classic 3D - 1.16 ores patch"
 			]
 		}

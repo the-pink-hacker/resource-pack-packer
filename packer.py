@@ -59,12 +59,11 @@ def filter_selection(packs, selected):
 
 
 class Packer:
-    def __init__(self, run_type, temp_dir, packs_dir, out_dir, packs):
+    def __init__(self, run_type, pack_folder_dir, temp_dir, out_dir):
         self.RUN_TYPE = run_type
+        self.PACK_FOLDER_DIR = pack_folder_dir
         self.TEMP_DIR = temp_dir
-        self.PACKS_DIR = packs_dir
         self.OUT_DIR = out_dir
-        self.PACKS = packs
 
     def start(self):
         if self.RUN_TYPE == "config":
@@ -76,13 +75,15 @@ class Packer:
         """Automatically packs a resource pack with the config file"""
         self.pack = input("Pack Name: ")
 
-        self.pack_dir = filter_selection(self.PACKS, self.pack)
+        self.config_file = Configs(self.pack).data
+
+        self.configs = self.config_file["configs"]
+
+        self.pack_dir = parse_dir_keywords(self.config_file["directory"], self.PACK_FOLDER_DIR)
 
         print(f"Located Pack: {self.pack_dir}")
 
         version = input("Version: ")
-
-        self.configs = Configs(self.pack).data["configs"]
 
         clear_temp(self.TEMP_DIR)
 
@@ -153,27 +154,25 @@ class Packer:
         shutil.copytree(self.pack_dir, temp_pack_dir)
 
         # Delete Textures
-        if Configs.check_option(self.configs[config], "textures"):
-            if Configs.check_option(self.configs[config]["textures"], "delete") and \
+        if check_option(self.configs[config], "textures"):
+            if check_option(self.configs[config]["textures"], "delete") and \
                     self.configs[config]["textures"]["delete"]:
                 print("Deleting textures...")
                 self.delete(temp_pack_dir, "textures", self.configs[config]["textures"]["ignore"])
 
         # Regenerate Meta
-        if Configs.check_option(self.configs[config], "regenerate_meta") and self.configs[config][
-            "regenerate_meta"]:
+        if check_option(self.configs[config], "regenerate_meta") and self.configs[config]["regenerate_meta"]:
             print("Regenerating meta...")
             self.regenerate_meta(temp_pack_dir, self.configs[config]["mc_version"])
 
         # Patch
-        if Configs.check_option(self.configs[config], "patches") and len(
-                self.configs[config]["patches"]) > 0:
+        if check_option(self.configs[config], "patches") and len(self.configs[config]["patches"]) > 0:
             print("Applying patches...")
             patches = self.configs[config]["patches"]
 
             for patch in patches:
                 print(f"Applying: {patch}")
-                patch_dir = filter_selection(self.PACKS, patch)
+                patch_dir = filter_selection(glob(path.join(self.PACK_FOLDER_DIR, "*"), recursive=False), patch)
                 self.patch_pack(temp_pack_dir, patch_dir)
 
         self.number_of_packers -= 1
