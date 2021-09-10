@@ -13,5 +13,3 @@ RUN_TYPE = input("Run as manual or config: ").lower()
 packer = Packer(RUN_TYPE, RESOURCE_PACK_FOLDER_DIR, TEMP_DIR, OUT_DIR)
 
 packer.start()
-
-clear_temp(TEMP_DIR)
