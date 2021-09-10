@@ -1,6 +1,6 @@
 {
 	"directory": "#packdir/Classic 3D - Mod Support",
-	"name_scheme": "§6§l#name v#version - #mcversion",
+	"name_scheme": "\u00A76\u00A7l#name v#version - #mcversion",
     "configs": {
     		"1.16": {
     		"mc_version": "1.16",
