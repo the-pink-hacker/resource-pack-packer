@@ -89,14 +89,16 @@ class Packer:
 
         start_time = time()
 
-        self.number_of_packers = 0
+        threads = []
 
         for config in self.configs:
             thread = Thread(target=self._pack, args=[config, version])
+            threads.append(thread)
             thread.start()
 
-        while self.number_of_packers > 0:
-            sleep(0.1)
+        # Waits for all threads to finish
+        for thread in threads:
+            thread.join()
 
         self.zip_packs()
 
@@ -132,9 +134,6 @@ class Packer:
 
         self.configs = generate_config(mc_version, delete_textures, ignore_folders, regenerate_meta, patches)
 
-        # _pack expect self.number_of_packs to be set
-        self.number_of_packers = 0
-
         self._pack(mc_version, version)
 
         self.zip_packs()
@@ -142,7 +141,6 @@ class Packer:
         print(f"Time: {time() - start_time} Seconds")
 
     def _pack(self, config, version):
-        self.number_of_packers += 1
         pack_name = parse_name_scheme_keywords(self.config_file["name_scheme"], path.basename(self.pack_dir), version, self.configs[config]["mc_version"])
         print(f"Config: {pack_name}")
 
@@ -174,8 +172,6 @@ class Packer:
                 print(f"Applying: {patch}")
                 patch_dir = filter_selection(glob(path.join(self.PACK_FOLDER_DIR, "*"), recursive=False), patch)
                 self.patch_pack(temp_pack_dir, patch_dir)
-
-        self.number_of_packers -= 1
 
     def delete(self, directory, folder, ignore):
         namespaces = glob(path.join(directory, "assets", "*"))
@@ -232,17 +228,18 @@ class Packer:
 
         packs = glob(path.join(self.TEMP_DIR, "*"))
 
-        self.packs_zipping = 0
+        threads = []
 
         for pack in packs:
             thread = Thread(target=self._zip_pack, args=[pack])
+            threads.append(thread)
             thread.start()
 
-        while self.packs_zipping > 0:
-            sleep(0.1)
+        # Waits for all threads to finish
+        for thread in threads:
+            thread.join()
 
     def _zip_pack(self, pack):
-        self.packs_zipping += 1
         shutil.make_archive(pack, "zip", pack)
 
         pack_name = path.basename(pack)
@@ -256,5 +253,3 @@ class Packer:
         else:
             shutil.move(path.normpath(pack + ".zip"), self.OUT_DIR)
             print(f"Completed pack sent to: {self.OUT_DIR}")
-
-        self.packs_zipping -= 1
