@@ -13,14 +13,8 @@ Minecraft - The folder that contains your resource pack folder.
 
 Output - The folder where you want to send your resource pack to.
 
-Tip: You can use "\~/" to represent you user folder. Example "\~/downloads" is your downloads folder.
+Tip: You can use `~/` to represent you user folder. Example `~/Downloads` is your downloads folder.
 
 
-## General
-Manual - You put in all of the settings every time.
-
-Config - A json file tell the program what settings you want. More on this in [Configs](#configs)
-
-
-## Configs
-Classic 3D and all of its varients' configs are present in the source code. These can be great examples since they use nearly every feature.
+## Wiki
+There is a wiki for this project. It can be found under the wiki tab.
