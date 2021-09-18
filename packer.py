@@ -177,7 +177,7 @@ class Packer:
         print("Copying...")
 
         # Copy Files
-        shutil.copytree(self.pack_dir, temp_pack_dir)
+        self._copy_pack(self.pack_dir, temp_pack_dir)
 
         # Delete Textures
         if check_option(self.configs[config], "textures"):
@@ -200,6 +200,32 @@ class Packer:
                 print(f"Applying: {patch}")
                 patch_dir = filter_selection(glob(path.join(self.PACK_FOLDER_DIR, "*"), recursive=False), patch)
                 self.patch_pack(temp_pack_dir, patch_dir)
+
+    def _copy_pack(self, src, dest):
+        files = glob(path.join(src, "**"), recursive=True)
+
+        copy_threads = []
+
+        for file in files:
+            if path.isfile(file):
+                thread = Thread(target=self._copy_file, args=[src, dest, file])
+                copy_threads.append(thread)
+                thread.start()
+
+        for thread in copy_threads:
+            thread.join()
+
+    def _copy_file(self, src, dest, file):
+        file_dest = file.replace(src, dest)
+
+        try:
+            shutil.copy(file, file_dest)
+        except IOError:
+            try:
+                os.makedirs(path.dirname(file_dest))
+            except FileExistsError:
+                pass
+            shutil.copy(file, file_dest)
 
     def delete(self, directory, folder, ignore):
         namespaces = glob(path.join(directory, "assets", "*"))
