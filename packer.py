@@ -47,11 +47,16 @@ def clear_temp(temp_dir):
 
 def filter_selection(packs, selected):
     """Finds the correct pack from a dir"""
+    # Checks for match
     for pack in packs:
-        # Checks for match
+        if selected is path.basename(pack):
+            return pack
+    # Checks for close match
+    for pack in packs:
         if selected in pack:
             return pack
-        # Checks for close match
+    # Checks for close match
+    for pack in packs:
         if selected.lower() in pack.lower():
             return pack
     print(f"Could not find: {selected}")
