@@ -85,7 +85,7 @@ class Packer:
 
         print(f"Located Pack: {self.pack_dir}")
 
-        version = input("Version: ")
+        version = input("Resource Pack Version: ")
 
         clear_temp(self.TEMP_DIR)
 
@@ -136,7 +136,7 @@ class Packer:
         """Manually input the option to pack a resource pack"""
         self.pack = input("Pack Name: ")
 
-        self.pack_dir = filter_selection(self.PACKS, self.pack)
+        self.pack_dir = filter_selection(glob(path.join(self.PACK_FOLDER_DIR, "*")), self.pack)
 
         print(f"Located Pack: {self.pack_dir}")
 
@@ -160,7 +160,9 @@ class Packer:
 
         start_time = time()
 
-        self.configs = generate_config(mc_version, delete_textures, ignore_folders, regenerate_meta, patches)
+        self.config_file = generate_config(path.basename(self.pack_dir), mc_version, delete_textures, ignore_folders, regenerate_meta, patches)
+
+        self.configs = self.config_file["configs"]
 
         self._pack(mc_version, version)
 

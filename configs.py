@@ -19,16 +19,20 @@ def _get_config_file(pack):
             return path.abspath(file)
 
 
-def generate_config(mc_version, delete_textures, ignore_folders, regenerate_meta, patches):
+def generate_config(pack_name, mc_version, delete_textures, ignore_folders, regenerate_meta, patches):
     data = {
-        mc_version: {
-            "mc_version": mc_version,
-            "textures": {
-                "delete": delete_textures,
-                "ignore": ignore_folders
-            },
-            "regenerate_meta": regenerate_meta,
-            "patches": patches
+        "directory": f"#packdir/{pack_name}",
+        "name_scheme": "\u00A76\u00A7l#name v#version - #mcversion",
+        "configs": {
+            mc_version: {
+                "mc_version": mc_version,
+                "textures": {
+                    "delete": delete_textures,
+                    "ignore": ignore_folders
+                },
+                "regenerate_meta": regenerate_meta,
+                "patches": patches
+            }
         }
     }
 
