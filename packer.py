@@ -107,8 +107,6 @@ class Packer:
         for thread in threads:
             thread.join()
 
-        self.zip_packs()
-
         print(f"Time: {time() - start_time} Seconds")
 
     def _pack_dev(self, rerun=False):
@@ -171,8 +169,6 @@ class Packer:
 
         self._pack(mc_version, version)
 
-        self.zip_packs()
-
         print(f"Time: {time() - start_time} Seconds")
 
     def _pack(self, config, version, dev=False):
@@ -211,6 +207,9 @@ class Packer:
                 print(f"Applying: {patch}")
                 patch_dir = filter_selection(glob(path.join(self.PACK_FOLDER_DIR, "*"), recursive=False), patch)
                 self.patch_pack(temp_pack_dir, patch_dir)
+
+        # Zip
+        self._zip_pack(temp_pack_dir)
 
     def _copy_pack(self, src, dest):
         files = glob(path.join(src, "**"), recursive=True)
@@ -286,23 +285,6 @@ class Packer:
                 except IOError:
                     os.makedirs(path.dirname(pack_file))
                     shutil.copy(file, pack_file)
-
-    def zip_packs(self):
-        # Zip files
-        print(f"Zipping...")
-
-        packs = glob(path.join(self.TEMP_DIR, "*"))
-
-        zip_threads = []
-
-        for pack in packs:
-            thread = Thread(target=self._zip_pack, args=[pack])
-            zip_threads.append(thread)
-            thread.start()
-
-        # Waits for all threads to finish
-        for thread in zip_threads:
-            thread.join()
 
     def _zip_pack(self, pack):
         shutil.make_archive(pack, "zip", pack)
