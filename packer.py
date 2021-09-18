@@ -282,17 +282,16 @@ class Packer:
 
         packs = glob(path.join(self.TEMP_DIR, "*"))
 
-        #threads = []
+        zip_threads = []
 
         for pack in packs:
-            self._zip_pack(pack)
-        #    thread = Thread(target=self._zip_pack, args=[pack])
-        #    threads.append(thread)
-        #    thread.start()
+            thread = Thread(target=self._zip_pack, args=[pack])
+            zip_threads.append(thread)
+            thread.start()
 
         # Waits for all threads to finish
-        #for thread in threads:
-        #    thread.join()
+        for thread in zip_threads:
+            thread.join()
 
     def _zip_pack(self, pack):
         shutil.make_archive(pack, "zip", pack)
