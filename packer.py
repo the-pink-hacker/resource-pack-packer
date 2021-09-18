@@ -106,9 +106,10 @@ class Packer:
 
         print(f"Time: {time() - start_time} Seconds")
 
-    def _pack_dev(self):
+    def _pack_dev(self, rerun=False):
         """Outputs a single config into your resource pack folder for development purposes"""
-        self.pack = input("Pack Name: ")
+        if not rerun:
+            self.pack = input("Pack Name: ")
 
         self.config_file = Configs(self.pack).data
 
@@ -120,13 +121,16 @@ class Packer:
 
         start_time = time()
 
-        config = input("Config: ")
+        if not rerun:
+            self.config = input("Config: ")
 
-        self._pack(config, "DEV", True)
+        self._pack(self.config, "DEV", True)
 
         print(f"Time: {time() - start_time} Seconds")
 
-        self._pack_dev()
+        input("Hit enter to rerun")
+
+        self._pack_dev(True)
 
     def _pack_manual(self):
         """Manually input the option to pack a resource pack"""
