@@ -68,6 +68,8 @@ class Packer:
     def start(self):
         if self.RUN_TYPE == "config":
             self._pack_configs()
+        elif self.RUN_TYPE == "dev":
+            self._pack_dev()
         elif self.RUN_TYPE == "manual":
             self._pack_manual()
 
@@ -103,6 +105,28 @@ class Packer:
         self.zip_packs()
 
         print(f"Time: {time() - start_time} Seconds")
+
+    def _pack_dev(self):
+        """Outputs a single config into your resource pack folder for development purposes"""
+        self.pack = input("Pack Name: ")
+
+        self.config_file = Configs(self.pack).data
+
+        self.configs = self.config_file["configs"]
+
+        self.pack_dir = parse_dir_keywords(self.config_file["directory"], self.PACK_FOLDER_DIR)
+
+        print(f"Located Pack: {self.pack_dir}")
+
+        start_time = time()
+
+        config = input("Config: ")
+
+        self._pack(config, "DEV", True)
+
+        print(f"Time: {time() - start_time} Seconds")
+
+        self._pack_dev()
 
     def _pack_manual(self):
         """Manually input the option to pack a resource pack"""
@@ -140,11 +164,15 @@ class Packer:
 
         print(f"Time: {time() - start_time} Seconds")
 
-    def _pack(self, config, version):
+    def _pack(self, config, version, dev=False):
         pack_name = parse_name_scheme_keywords(self.config_file["name_scheme"], path.basename(self.pack_dir), version, self.configs[config]["mc_version"])
         print(f"Config: {pack_name}")
 
         temp_pack_dir = path.join(self.TEMP_DIR, pack_name)
+
+        if dev:
+            temp_pack_dir = path.join(self.PACK_FOLDER_DIR, pack_name)
+            clear_temp(temp_pack_dir)
 
         print("Copying...")
 
