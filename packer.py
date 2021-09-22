@@ -122,10 +122,10 @@ class Packer:
 
         print(f"Located Pack: {self.pack_dir}")
 
-        start_time = time()
-
         if not rerun:
             self.config = input("Config: ")
+
+        start_time = time()
 
         self._pack(self.config, "DEV", True)
 
