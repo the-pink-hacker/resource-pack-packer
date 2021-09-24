@@ -1,11 +1,10 @@
 import os
 import shutil
-from time import time
-from glob import glob
 from threading import Thread
-from time import sleep
+from time import time
 
 from configs import *
+from patch import *
 from settings import *
 
 
@@ -201,12 +200,14 @@ class Packer:
         # Patch
         if check_option(self.configs[config], "patches") and len(self.configs[config]["patches"]) > 0:
             print("Applying patches...")
-            patches = self.configs[config]["patches"]
+
+            patches = get_patches(self.configs[config], self.PACK_FOLDER_DIR)
+
+            patcher = Patcher()
 
             for patch in patches:
-                print(f"Applying: {patch}")
-                patch_dir = filter_selection(glob(path.join(self.PACK_FOLDER_DIR, "*"), recursive=False), patch)
-                self.patch_pack(temp_pack_dir, patch_dir)
+                print(f"Applying: {patch.directory}")
+                self.patch_pack(temp_pack_dir, patch.directory)
 
         # Zip
         if not dev:
@@ -275,11 +276,11 @@ class Packer:
             # The location that the file should go to
             pack_file = file.replace(patch, pack)
 
-            # Removes all files in pack that are in the patch
+            # Removes all files in pack that are in the patch.py
             if path.isfile(pack_file) and path.exists(pack_file):
                 os.remove(pack_file)
 
-            # Applies patch
+            # Applies patch.py
             if path.isfile(file) and path.exists(file):
                 try:
                     shutil.copy(file, pack_file)

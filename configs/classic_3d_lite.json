@@ -1,59 +1,59 @@
 {
-	"directory": "#packdir/Classic 3D - Lite",
-	"name_scheme": "\u00A76\u00A7l#name v#version - #mcversion",
-	"configs": {
-		"1.17": {
-			"mc_version": "1.17",
-			"textures": {
-				"delete": true,
-				"ignore": [
-					"3d",
-					"gui"
-				]
-			},
-			"regenerate_meta": true
-		},
-		"1.16": {
-			"mc_version": "1.16",
-			"textures": {
-				"delete": true,
-				"ignore": [
-					"3d",
-					"gui"
-				]
-			},
-			"regenerate_meta": true,
-			"patches": [
-				"Classic 3D - 1.16 ores patch"
-			]
-		},
-		"1.15": {
-			"mc_version": "1.15",
-			"textures": {
-				"delete": true,
-				"ignore": [
-					"3d",
-					"gui"
-				]
-			},
-			"regenerate_meta": true,
-			"patches": [
-				"Classic 3D - 1.16 ores patch"
-			]
-		},
-		"1.13-1.14": {
-			"mc_version": "1.13",
-			"textures": {
-				"delete": true,
-				"ignore": [
-					"3d",
-					"gui"
-				]
-			},
-			"regenerate_meta": true,
-			"patches": [
-				"Classic 3D - 1.16 ores patch"
-			]
-		}
-	}
+  "directory": "#packdir/Classic 3D - Lite",
+  "name_scheme": "\u00A76\u00A7l#name v#version - #mcversion",
+  "configs": {
+    "1.17": {
+      "mc_version": "1.17",
+      "textures": {
+        "delete": true,
+        "ignore": [
+          "3d",
+          "gui"
+        ]
+      },
+      "regenerate_meta": true
+    },
+    "1.16": {
+      "mc_version": "1.16",
+      "textures": {
+        "delete": true,
+        "ignore": [
+          "3d",
+          "gui"
+        ]
+      },
+      "regenerate_meta": true,
+      "patches": [
+        "classic_3d_patch_1-16_ores"
+      ]
+    },
+    "1.15": {
+      "mc_version": "1.15",
+      "textures": {
+        "delete": true,
+        "ignore": [
+          "3d",
+          "gui"
+        ]
+      },
+      "regenerate_meta": true,
+      "patches": [
+        "classic_3d_patch_1-16_ores"
+      ]
+    },
+    "1.13-1.14": {
+      "mc_version": "1.13",
+      "textures": {
+        "delete": true,
+        "ignore": [
+          "3d",
+          "gui"
+        ]
+      },
+      "regenerate_meta": true,
+      "patches": [
+        "classic_3d_patch_1-16_ores"
+      ]
+    }
+  }
 }
