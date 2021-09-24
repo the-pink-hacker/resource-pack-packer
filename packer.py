@@ -209,7 +209,8 @@ class Packer:
                 self.patch_pack(temp_pack_dir, patch_dir)
 
         # Zip
-        self._zip_pack(temp_pack_dir)
+        if not dev:
+            self._zip_pack(temp_pack_dir)
 
     def _copy_pack(self, src, dest):
         files = glob(path.join(src, "**"), recursive=True)
