@@ -201,13 +201,10 @@ class Packer:
         if check_option(self.configs[config], "patches") and len(self.configs[config]["patches"]) > 0:
             print("Applying patches...")
 
-            patches = get_patches(self.configs[config], self.PACK_FOLDER_DIR)
-
-            patcher = Patcher()
+            patches = get_patches(self.configs[config])
 
             for patch in patches:
-                print(f"Applying: {patch.directory}")
-                self.patch_pack(temp_pack_dir, patch.directory)
+                patch_pack(temp_pack_dir, patch, self.PACK_FOLDER_DIR)
 
         # Zip
         if not dev:
@@ -268,25 +265,6 @@ class Packer:
                 data["pack"]["pack_format"] = pack_format
 
             json.dump(data, file, ensure_ascii=False, indent=2)
-
-    def patch_pack(self, pack, patch):
-        patch_files = glob(path.join(patch, "**"), recursive=True)
-
-        for file in patch_files:
-            # The location that the file should go to
-            pack_file = file.replace(patch, pack)
-
-            # Removes all files in pack that are in the patch.py
-            if path.isfile(pack_file) and path.exists(pack_file):
-                os.remove(pack_file)
-
-            # Applies patch.py
-            if path.isfile(file) and path.exists(file):
-                try:
-                    shutil.copy(file, pack_file)
-                except IOError:
-                    os.makedirs(path.dirname(pack_file))
-                    shutil.copy(file, pack_file)
 
     def _zip_pack(self, pack):
         shutil.make_archive(pack, "zip", pack)

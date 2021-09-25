@@ -1,6 +1,6 @@
 {
-  "directory": "#packdir/Classic 3D - Lite",
-  "name_scheme": "\u00A76\u00A7l#name v#version - #mcversion",
+  "directory": "#packdir/Classic 3D",
+  "name_scheme": "\u00A76\u00A7l#name - Lite v#version - #mcversion",
   "configs": {
     "1.17": {
       "mc_version": "1.17",
@@ -11,7 +11,11 @@
           "gui"
         ]
       },
-      "regenerate_meta": true
+      "regenerate_meta": true,
+      "patches": [
+        "classic_3d_lite_patch_remove",
+        "classic_3d_lite_patch_replace"
+      ]
     },
     "1.16": {
       "mc_version": "1.16",
@@ -24,7 +28,9 @@
       },
       "regenerate_meta": true,
       "patches": [
-        "classic_3d_patch_1-16_ores"
+        "classic_3d_patch_1-16_ores",
+        "classic_3d_lite_patch_remove",
+        "classic_3d_lite_patch_replace"
       ]
     },
     "1.15": {
@@ -38,7 +44,9 @@
       },
       "regenerate_meta": true,
       "patches": [
-        "classic_3d_patch_1-16_ores"
+        "classic_3d_patch_1-16_ores",
+        "classic_3d_lite_patch_remove",
+        "classic_3d_lite_patch_replace"
       ]
     },
     "1.13-1.14": {
@@ -52,7 +60,9 @@
       },
       "regenerate_meta": true,
       "patches": [
-        "classic_3d_patch_1-16_ores"
+        "classic_3d_patch_1-16_ores",
+        "classic_3d_lite_patch_remove",
+        "classic_3d_lite_patch_replace"
       ]
     }
   }
