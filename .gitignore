@@ -22,4 +22,6 @@ dist/
 build/
 
 temp/
+patches/
+configs/
 

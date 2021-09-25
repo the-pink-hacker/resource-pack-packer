@@ -56,10 +56,14 @@ def _patch_remove(pack, patch):
     for file in files:
         file_abs = path.join(pack, file)
 
-        # removes file
+        # Removes file
         if path.isfile(file_abs) and path.exists(path.dirname(file_abs)):
             os.remove(file_abs)
             print(f"removed: {file_abs}")
+
+        # Removes folder
+        if path.exists(file_abs):
+            shutil.rmtree(file_abs)
 
 
 def patch_pack(pack, patch, resource_pack_dir):
