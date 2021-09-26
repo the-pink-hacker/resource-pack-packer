@@ -25,7 +25,8 @@ class Settings:
                         "pack_folder": path.normpath(
                             path.join(parse_dir(input("Minecraft Folder: ")), "resourcepacks")),
                         "temp": "temp",
-                        "out": parse_dir(input("Output Folder: "))
+                        "out": parse_dir(input("Output Folder: ")),
+                        "patch": "patches"
                     }
                 }
                 json.dump(data, file, indent="\t")

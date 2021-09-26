@@ -63,11 +63,12 @@ def filter_selection(packs, selected):
 
 
 class Packer:
-    def __init__(self, run_type, pack_folder_dir, temp_dir, out_dir):
+    def __init__(self, run_type, pack_folder_dir, temp_dir, out_dir, patch_dir):
         self.RUN_TYPE = run_type
         self.PACK_FOLDER_DIR = pack_folder_dir
         self.TEMP_DIR = temp_dir
         self.OUT_DIR = out_dir
+        self.PATCH_DIR = patch_dir
 
     def start(self):
         if self.RUN_TYPE == "config":
@@ -201,7 +202,7 @@ class Packer:
         if check_option(self.configs[config], "patches") and len(self.configs[config]["patches"]) > 0:
             print("Applying patches...")
 
-            patches = get_patches(self.configs[config])
+            patches = get_patches(self.configs[config], self.PATCH_DIR)
 
             for patch in patches:
                 patch_pack(temp_pack_dir, patch, self.PACK_FOLDER_DIR)

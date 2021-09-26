@@ -11,18 +11,18 @@ PATCH_TYPE_REPLACE = "replace"
 PATH_TYPE_REMOVE = "remove"
 
 
-def get_patches(config):
+def get_patches(config, patch_dir):
     patches = []
 
     for patch in config["patches"]:
-        patches.append(Patch(patch))
+        patches.append(Patch(patch, patch_dir))
 
     return patches
 
 
 class Patch:
-    def __init__(self, patch):
-        with open(path.join("patches", f"{patch}.json")) as file:
+    def __init__(self, patch, patch_dir):
+        with open(path.join(patch_dir, f"{patch}.json")) as file:
             data = json.load(file)
             self.patch = data["patch"]
             self.type = data["type"]
