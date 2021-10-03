@@ -62,20 +62,33 @@ def filter_selection(packs, selected):
     return None
 
 
+RUN_TYPE_CONFIG = "config"
+RUN_TYPE_DEV = "dev"
+RUN_TYPE_MANUAL = "manual"
+
+
 class Packer:
-    def __init__(self, run_type, pack_folder_dir, temp_dir, out_dir, patch_dir):
+    def __init__(self, run_type, pack_folder_dir, temp_dir, out_dir, patch_dir, pack=None, parent=None):
         self.RUN_TYPE = run_type
         self.PACK_FOLDER_DIR = pack_folder_dir
         self.TEMP_DIR = temp_dir
         self.OUT_DIR = out_dir
         self.PATCH_DIR = patch_dir
 
+        self.PACK_OVERRIDE = pack is not None
+
+        if not self.PACK_OVERRIDE:
+            self.pack = None
+        else:
+            self.pack = pack
+            self.parent = parent
+
     def start(self):
-        if self.RUN_TYPE == "config":
+        if self.RUN_TYPE == RUN_TYPE_CONFIG:
             self._pack_configs()
-        elif self.RUN_TYPE == "dev":
+        elif self.RUN_TYPE == RUN_TYPE_DEV:
             self._pack_dev()
-        elif self.RUN_TYPE == "manual":
+        elif self.RUN_TYPE == RUN_TYPE_MANUAL:
             self._pack_manual()
 
     def _pack_configs(self):
@@ -112,7 +125,8 @@ class Packer:
     def _pack_dev(self, rerun=False):
         """Outputs a single config into your resource pack folder for development purposes"""
         if not rerun:
-            self.pack = input("Pack Name: ")
+            if not self.PACK_OVERRIDE:
+                self.pack = input("Pack Name: ")
 
         self.config_file = Configs(self.pack).data
 
@@ -123,17 +137,33 @@ class Packer:
         print(f"Located Pack: {self.pack_dir}")
 
         if not rerun:
-            self.config = input("Config: ")
+            if not self.PACK_OVERRIDE:
+                self.config = input("Config: ")
+            else:
+                self.config = self.parent.config
+
+        # Checks for dependencies and builds them
+        if check_option(self.config_file, "dev"):
+            if check_option(self.config_file["dev"], "dependencies"):
+                dependencies = self.config_file["dev"]["dependencies"]
+
+                if len(dependencies) > 0:
+                    print(f"Packing {self.pack}'s dependencies...")
+
+                    for pack in dependencies:
+                        print(f"Packing {pack}")
+                        packer = Packer(RUN_TYPE_DEV, self.PACK_FOLDER_DIR, self.TEMP_DIR, self.OUT_DIR, self.PATCH_DIR, pack.replace("_", " "), self)
+                        packer.start()
 
         start_time = time()
 
         self._pack(self.config, "DEV", True)
 
-        print(f"Time: {time() - start_time} Seconds")
+        print(f"{self.pack_dir} - Time: {time() - start_time} Seconds")
 
-        input("Hit enter to rerun")
-
-        self._pack_dev(True)
+        if not self.PACK_OVERRIDE:
+            input("Hit enter to rerun")
+            self._pack_dev(True)
 
     def _pack_manual(self):
         """Manually input the option to pack a resource pack"""
@@ -163,7 +193,8 @@ class Packer:
 
         start_time = time()
 
-        self.config_file = generate_config(path.basename(self.pack_dir), mc_version, delete_textures, ignore_folders, regenerate_meta, patches)
+        self.config_file = generate_config(path.basename(self.pack_dir), mc_version, delete_textures, ignore_folders,
+                                           regenerate_meta, patches)
 
         self.configs = self.config_file["configs"]
 
@@ -172,7 +203,8 @@ class Packer:
         print(f"Time: {time() - start_time} Seconds")
 
     def _pack(self, config, version, dev=False):
-        pack_name = parse_name_scheme_keywords(self.config_file["name_scheme"], path.basename(self.pack_dir), version, self.configs[config]["mc_version"])
+        pack_name = parse_name_scheme_keywords(self.config_file["name_scheme"], path.basename(self.pack_dir), version,
+                                               self.configs[config]["mc_version"])
         print(f"Config: {pack_name}")
 
         temp_pack_dir = path.join(self.TEMP_DIR, pack_name)
