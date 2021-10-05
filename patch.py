@@ -8,24 +8,28 @@ from configs import check_option
 from settings import parse_dir_keywords
 
 PATCH_TYPE_REPLACE = "replace"
-PATH_TYPE_REMOVE = "remove"
+PATCH_TYPE_REMOVE = "remove"
+PATCH_TYPE_MULTI = "multi"
 
 
 def get_patches(config, patch_dir):
     patches = []
 
     for patch in config["patches"]:
-        patches.append(Patch(patch, patch_dir))
+        patches.append(Patch(get_patch_data(patch, patch_dir)))
 
     return patches
 
 
+def get_patch_data(patch, patch_dir):
+    with open(path.join(patch_dir, f"{patch}.json")) as file:
+        return json.load(file)
+
+
 class Patch:
-    def __init__(self, patch, patch_dir):
-        with open(path.join(patch_dir, f"{patch}.json")) as file:
-            data = json.load(file)
-            self.patch = data["patch"]
-            self.type = data["type"]
+    def __init__(self, data):
+        self.patch = data["patch"]
+        self.type = data["type"]
 
 
 # Replaces and adds files accordingly
@@ -172,8 +176,20 @@ def _patch_remove(pack, patch):
             shutil.rmtree(file_abs)
 
 
+# Contains multiple patches
+def _patch_multi(pack, patch, resource_pack_dir):
+    patches = patch.patch
+
+    for patch in patches:
+        patch_pack(pack, Patch(patch), resource_pack_dir)
+
+
 def patch_pack(pack, patch, resource_pack_dir):
     if patch.type == PATCH_TYPE_REPLACE:
         _patch_replace(pack, patch, resource_pack_dir)
-    elif patch.type == PATH_TYPE_REMOVE:
+    elif patch.type == PATCH_TYPE_REMOVE:
         _patch_remove(pack, patch)
+    elif patch.type == PATCH_TYPE_MULTI:
+        _patch_multi(pack, patch, resource_pack_dir)
+    else:
+        print(f"Incorrect patch type: {patch.type}")
