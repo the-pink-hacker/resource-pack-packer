@@ -63,6 +63,13 @@ def filter_selection(packs, selected):
     return None
 
 
+def zip_dir(src, dest):
+    with zipfile.ZipFile(dest, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        for root, dirs, files in os.walk(src):
+            for file in files:
+                zip_file.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), src))
+
+
 RUN_TYPE_CONFIG = "config"
 RUN_TYPE_DEV = "dev"
 RUN_TYPE_MANUAL = "manual"
@@ -290,16 +297,10 @@ class Packer:
             json.dump(data, file, ensure_ascii=False, indent=2)
 
     def _zip_pack(self, pack):
-        shutil.make_archive(pack, "zip", pack)
+        output = path.normpath(path.join(self.OUT_DIR, path.basename(pack) + ".zip"))
 
-        pack_name = path.basename(pack)
+        if path.exists(output):
+            os.remove(output)
 
-        # Move to out dir
-        if path.exists(path.normpath(path.join(self.OUT_DIR, pack_name + ".zip"))):
-            os.remove(path.normpath(path.join(self.OUT_DIR, pack_name + ".zip")))
-            shutil.move(path.normpath(pack + ".zip"), self.OUT_DIR)
-
-            print(f"Completed pack sent to: {self.OUT_DIR}")
-        else:
-            shutil.move(path.normpath(pack + ".zip"), self.OUT_DIR)
-            print(f"Completed pack sent to: {self.OUT_DIR}")
+        zip_dir(pack, output)
+        print(f"Completed pack sent to: {self.OUT_DIR}")
