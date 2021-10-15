@@ -4,7 +4,7 @@ import shutil
 from glob import glob
 from os import path
 
-from configs import check_option
+import info
 from settings import parse_dir_keywords
 
 PATCH_TYPE_REPLACE = "replace"
@@ -12,17 +12,24 @@ PATCH_TYPE_REMOVE = "remove"
 PATCH_TYPE_MULTI = "multi"
 
 
-def get_patches(config, patch_dir):
+def check_option(root, option):
+    if option in root:
+        return True
+    else:
+        return False
+
+
+def get_patches(patch_names):
     patches = []
 
-    for patch in config["patches"]:
-        patches.append(Patch(get_patch_data(patch, patch_dir)))
+    for patch in patch_names:
+        patches.append(Patch(get_patch_data(patch)))
 
     return patches
 
 
-def get_patch_data(patch, patch_dir):
-    with open(path.join(patch_dir, f"{patch}.json")) as file:
+def get_patch_data(patch):
+    with open(path.join(info.PATCH_DIR, f"{patch}.json")) as file:
         return json.load(file)
 
 
@@ -33,8 +40,8 @@ class Patch:
 
 
 # Replaces and adds files accordingly
-def _patch_replace(pack, patch, resource_pack_dir):
-    patch_dir = parse_dir_keywords(patch.patch["directory"], resource_pack_dir)
+def _patch_replace(pack, patch):
+    patch_dir = parse_dir_keywords(patch.patch["directory"])
     patch_files = glob(path.join(patch_dir, "**"), recursive=True)
 
     for file in patch_files:
@@ -177,19 +184,19 @@ def _patch_remove(pack, patch):
 
 
 # Contains multiple patches
-def _patch_multi(pack, patch, resource_pack_dir):
+def _patch_multi(pack, patch):
     patches = patch.patch
 
     for patch in patches:
-        patch_pack(pack, Patch(patch), resource_pack_dir)
+        patch_pack(pack, Patch(patch))
 
 
-def patch_pack(pack, patch, resource_pack_dir):
+def patch_pack(pack, patch):
     if patch.type == PATCH_TYPE_REPLACE:
-        _patch_replace(pack, patch, resource_pack_dir)
+        _patch_replace(pack, patch)
     elif patch.type == PATCH_TYPE_REMOVE:
         _patch_remove(pack, patch)
     elif patch.type == PATCH_TYPE_MULTI:
-        _patch_multi(pack, patch, resource_pack_dir)
+        _patch_multi(pack, patch)
     else:
         print(f"Incorrect patch type: {patch.type}")

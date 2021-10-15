@@ -1,13 +1,15 @@
 import json
 from glob import glob
 from os import path
-from settings import _parse_keyword
+
+from patch import get_patches
+from settings import *
 
 
 def parse_name_scheme_keywords(scheme, name, version, mc_version):
-    scheme = _parse_keyword(scheme, "name", name)
-    scheme = _parse_keyword(scheme, "version", version)
-    scheme = _parse_keyword(scheme, "mcversion", mc_version)
+    scheme = parse_keyword(scheme, "name", name)
+    scheme = parse_keyword(scheme, "version", version)
+    scheme = parse_keyword(scheme, "mcversion", mc_version)
     return scheme
 
 
@@ -19,7 +21,7 @@ def _get_config_file(pack):
             return path.abspath(file)
 
 
-def generate_config(pack_name, mc_version, delete_textures, ignore_folders, regenerate_meta, patches):
+def generate_pack_info(pack, pack_name, mc_version, delete_textures, ignore_folders, regenerate_meta, patches):
     data = {
         "directory": f"#packdir/{pack_name}",
         "name_scheme": "\u00A76\u00A7l#name v#version - #mcversion",
@@ -36,7 +38,7 @@ def generate_config(pack_name, mc_version, delete_textures, ignore_folders, rege
         }
     }
 
-    return data
+    return PackInfo(pack, data)
 
 
 def check_option(root, option):
@@ -46,7 +48,33 @@ def check_option(root, option):
         return False
 
 
-class Configs:
-    def __init__(self, pack):
-        with open(_get_config_file(pack)) as file:
-            self.data = json.load(file)
+class PackInfo:
+    def __init__(self, pack_name, data=None):
+        if data is None:
+            with open(_get_config_file(pack_name)) as file:
+                data = json.load(file)
+
+        self.directory = data["directory"]
+        self.name_scheme = data["name_scheme"]
+        self.dependencies = []
+
+        if check_option(data, "dev") and check_option(data["data"], "dependencies"):
+            self.dependencies = data["dev"]["dependencies"]
+
+        self.configs = []
+
+        for config in data["configs"]:
+            self.configs.append(Config(data["configs"][config], config))
+
+
+class Config:
+    def __init__(self, config, name):
+        self.name = name
+        self.mc_version = config["mc_version"]
+        self.delete_textures = config["textures"]["delete"]
+        self.ignore_textures = config["textures"]["ignore"]
+        self.regenerate_meta = config["regenerate_meta"]
+        self.patches = []
+
+        if check_option(config, "patches"):
+            self.patches = get_patches(config["patches"])

@@ -1,13 +1,15 @@
 import json
 from os import path
 
+import info
 
-def _parse_keyword(directory, keyword, variable):
+
+def parse_keyword(directory, keyword, variable):
     return path.normpath(directory.replace(f"#{keyword}", variable))
 
 
-def parse_dir_keywords(directory, pack_folder_dir):
-    directory = _parse_keyword(directory, "packdir", pack_folder_dir)
+def parse_dir_keywords(directory):
+    directory = parse_keyword(directory, "packdir", info.RESOURCE_PACK_FOLDER_DIR)
     return parse_dir(directory)
 
 

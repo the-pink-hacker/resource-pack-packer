@@ -1,7 +1,8 @@
 import os
 import shutil
+import zipfile
 from threading import Thread
-from time import time
+from time import time, sleep
 
 from configs import *
 from patch import *
@@ -95,11 +96,9 @@ class Packer:
         """Automatically packs a resource pack with the config file"""
         self.pack = input("Pack Name: ")
 
-        self.config_file = Configs(self.pack).data
+        self.pack_info = PackInfo(self.pack)
 
-        self.configs = self.config_file["configs"]
-
-        self.pack_dir = parse_dir_keywords(self.config_file["directory"], self.PACK_FOLDER_DIR)
+        self.pack_dir = parse_dir_keywords(self.pack_info.directory)
 
         print(f"Located Pack: {self.pack_dir}")
 
@@ -111,7 +110,7 @@ class Packer:
 
         threads = []
 
-        for config in self.configs:
+        for config in self.pack_info.configs:
             thread = Thread(target=self._pack, args=[config, version])
             threads.append(thread)
             thread.start()
@@ -128,11 +127,9 @@ class Packer:
             if not self.PACK_OVERRIDE:
                 self.pack = input("Pack Name: ")
 
-        self.config_file = Configs(self.pack).data
+        self.pack_info = PackInfo(self.pack)
 
-        self.configs = self.config_file["configs"]
-
-        self.pack_dir = parse_dir_keywords(self.config_file["directory"], self.PACK_FOLDER_DIR)
+        self.pack_dir = parse_dir_keywords(self.pack_info.directory)
 
         print(f"Located Pack: {self.pack_dir}")
 
@@ -143,21 +140,20 @@ class Packer:
                 self.config = self.parent.config
 
         # Checks for dependencies and builds them
-        if check_option(self.config_file, "dev"):
-            if check_option(self.config_file["dev"], "dependencies"):
-                dependencies = self.config_file["dev"]["dependencies"]
+        if len(self.pack_info.dependencies) > 0:
+            print(f"Packing {self.pack}'s dependencies...")
 
-                if len(dependencies) > 0:
-                    print(f"Packing {self.pack}'s dependencies...")
-
-                    for pack in dependencies:
-                        print(f"Packing {pack}")
-                        packer = Packer(RUN_TYPE_DEV, self.PACK_FOLDER_DIR, self.TEMP_DIR, self.OUT_DIR, self.PATCH_DIR, pack.replace("_", " "), self)
-                        packer.start()
+            for pack in self.pack_info.dependencies:
+                print(f"Packing {pack}")
+                packer = Packer(RUN_TYPE_DEV, self.PACK_FOLDER_DIR, self.TEMP_DIR, self.OUT_DIR, self.PATCH_DIR,
+                                pack.replace("_", " "), self)
+                packer.start()
 
         start_time = time()
 
-        self._pack(self.config, "DEV", True)
+        for config in self.pack_info.configs:
+            if config.name == self.config:
+                self._pack(config, "DEV", True)
 
         print(f"{self.pack_dir} - Time: {time() - start_time} Seconds")
 
@@ -193,18 +189,16 @@ class Packer:
 
         start_time = time()
 
-        self.config_file = generate_config(path.basename(self.pack_dir), mc_version, delete_textures, ignore_folders,
-                                           regenerate_meta, patches)
+        self.pack_info = generate_pack_info(self.pack, path.basename(self.pack_dir), mc_version, delete_textures,
+                                            ignore_folders, regenerate_meta, patches)
 
-        self.configs = self.config_file["configs"]
-
-        self._pack(mc_version, version)
+        self._pack(self.pack_info.configs[0], version)
 
         print(f"Time: {time() - start_time} Seconds")
 
     def _pack(self, config, version, dev=False):
-        pack_name = parse_name_scheme_keywords(self.config_file["name_scheme"], path.basename(self.pack_dir), version,
-                                               self.configs[config]["mc_version"])
+        pack_name = parse_name_scheme_keywords(self.pack_info.name_scheme, path.basename(self.pack_dir), version,
+                                               config.mc_version)
         print(f"Config: {pack_name}")
 
         temp_pack_dir = path.join(self.TEMP_DIR, pack_name)
@@ -219,25 +213,21 @@ class Packer:
         self._copy_pack(self.pack_dir, temp_pack_dir)
 
         # Delete Textures
-        if check_option(self.configs[config], "textures"):
-            if check_option(self.configs[config]["textures"], "delete") and \
-                    self.configs[config]["textures"]["delete"]:
-                print("Deleting textures...")
-                self.delete(temp_pack_dir, "textures", self.configs[config]["textures"]["ignore"])
+        if config.delete_textures:
+            print("Deleting textures...")
+            self.delete(temp_pack_dir, "textures", config.ignore_textures)
 
         # Regenerate Meta
-        if check_option(self.configs[config], "regenerate_meta") and self.configs[config]["regenerate_meta"]:
+        if config.regenerate_meta:
             print("Regenerating meta...")
-            self.regenerate_meta(temp_pack_dir, self.configs[config]["mc_version"])
+            self.regenerate_meta(temp_pack_dir, config.mc_version)
 
         # Patch
-        if check_option(self.configs[config], "patches") and len(self.configs[config]["patches"]) > 0:
+        if len(config.patches) > 0:
             print("Applying patches...")
 
-            patches = get_patches(self.configs[config], self.PATCH_DIR)
-
-            for patch in patches:
-                patch_pack(temp_pack_dir, patch, self.PACK_FOLDER_DIR)
+            for patch in config.patches:
+                patch_pack(temp_pack_dir, patch)
 
         # Zip
         if not dev:
