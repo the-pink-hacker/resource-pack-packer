@@ -1,6 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="build" type="PowerShellRunType" factoryName="PowerShell" scriptUrl="$PROJECT_DIR$/build.ps1" workingDirectory="$PROJECT_DIR$/" executablePath="/usr/bin/pwsh">
-    <envs />
-    <method v="2" />
-  </configuration>
-</component>

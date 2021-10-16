@@ -32,10 +32,10 @@ class Settings:
 
         with open("settings.json", "r") as file:
             data = json.load(file)
-            self.pack_folder = data["locations"]["pack_folder"]
-            self.temp_dir = data["locations"]["temp"]
-            self.out_dir = data["locations"]["out"]
-            self.patch_dir = data["locations"]["patch"]
+            self.pack_folder = parse_dir(data["locations"]["pack_folder"])
+            self.temp_dir = parse_dir(data["locations"]["temp"])
+            self.out_dir = parse_dir(data["locations"]["out"])
+            self.patch_dir = parse_dir(data["locations"]["patch"])
 
 
 MAIN_SETTINGS = Settings()
