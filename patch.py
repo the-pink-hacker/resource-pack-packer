@@ -4,8 +4,7 @@ import shutil
 from glob import glob
 from os import path
 
-import info
-from settings import parse_dir_keywords
+from settings import parse_dir_keywords, MAIN_SETTINGS
 
 PATCH_TYPE_REPLACE = "replace"
 PATCH_TYPE_REMOVE = "remove"
@@ -29,7 +28,7 @@ def get_patches(patch_names):
 
 
 def get_patch_data(patch):
-    with open(path.join(info.PATCH_DIR, f"{patch}.json")) as file:
+    with open(path.join(MAIN_SETTINGS.patch_dir, f"{patch}.json")) as file:
         return json.load(file)
 
 

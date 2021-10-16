@@ -1,15 +1,13 @@
 import json
 from os import path
 
-import info
-
 
 def parse_keyword(directory, keyword, variable):
     return path.normpath(directory.replace(f"#{keyword}", variable))
 
 
 def parse_dir_keywords(directory):
-    directory = parse_keyword(directory, "packdir", info.RESOURCE_PACK_FOLDER_DIR)
+    directory = parse_keyword(directory, "packdir", MAIN_SETTINGS.pack_folder)
     return parse_dir(directory)
 
 
@@ -24,8 +22,7 @@ class Settings:
             with open("settings.json", "x") as file:
                 data = {
                     "locations": {
-                        "pack_folder": path.normpath(
-                            path.join(parse_dir(input("Minecraft Folder: ")), "resourcepacks")),
+                        "pack_folder": path.normpath(path.join(parse_dir(input("Minecraft Folder: ")), "resourcepacks")),
                         "temp": "temp",
                         "out": parse_dir(input("Output Folder: ")),
                         "patch": "patches"
@@ -34,4 +31,11 @@ class Settings:
                 json.dump(data, file, indent="\t")
 
         with open("settings.json", "r") as file:
-            self.data = json.load(file)
+            data = json.load(file)
+            self.pack_folder = data["locations"]["pack_folder"]
+            self.temp_dir = data["locations"]["temp"]
+            self.out_dir = data["locations"]["out"]
+            self.patch_dir = data["locations"]["patch"]
+
+
+MAIN_SETTINGS = Settings()

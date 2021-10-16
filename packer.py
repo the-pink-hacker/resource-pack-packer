@@ -1,8 +1,7 @@
 import os
-import shutil
 import zipfile
 from threading import Thread
-from time import time, sleep
+from time import time
 
 from configs import *
 from patch import *
@@ -76,12 +75,12 @@ RUN_TYPE_MANUAL = "manual"
 
 
 class Packer:
-    def __init__(self, run_type, pack_folder_dir, temp_dir, out_dir, patch_dir, pack=None, parent=None):
+    def __init__(self, run_type, pack=None, parent=None):
         self.RUN_TYPE = run_type
-        self.PACK_FOLDER_DIR = pack_folder_dir
-        self.TEMP_DIR = temp_dir
-        self.OUT_DIR = out_dir
-        self.PATCH_DIR = patch_dir
+        self.PACK_FOLDER_DIR = MAIN_SETTINGS.pack_folder
+        self.TEMP_DIR = MAIN_SETTINGS.temp_dir
+        self.OUT_DIR = MAIN_SETTINGS.out_dir
+        self.PATCH_DIR = MAIN_SETTINGS.patch_dir
 
         self.PACK_OVERRIDE = pack is not None
 
@@ -152,8 +151,7 @@ class Packer:
 
             for pack in self.pack_info.dependencies:
                 print(f"Packing {pack}")
-                packer = Packer(RUN_TYPE_DEV, self.PACK_FOLDER_DIR, self.TEMP_DIR, self.OUT_DIR, self.PATCH_DIR,
-                                pack.replace("_", " "), self)
+                packer = Packer(RUN_TYPE_DEV, pack.replace("_", " "), self)
                 packer.start()
 
         start_time = time()
