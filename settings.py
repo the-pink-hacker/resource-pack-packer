@@ -26,6 +26,9 @@ class Settings:
                         "temp": "temp",
                         "out": parse_dir(input("Output Folder: ")),
                         "patch": "patches"
+                    },
+                    "api_tokens": {
+                        "curseforge": ""
                     }
                 }
                 json.dump(data, file, indent="\t")
@@ -36,6 +39,7 @@ class Settings:
             self.temp_dir = parse_dir(data["locations"]["temp"])
             self.out_dir = parse_dir(data["locations"]["out"])
             self.patch_dir = parse_dir(data["locations"]["patch"])
+            self.curseforge = data["api_tokens"]["curseforge"]
 
 
 MAIN_SETTINGS = Settings()

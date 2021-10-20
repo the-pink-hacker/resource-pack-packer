@@ -66,11 +66,17 @@ class PackInfo:
         for config in data["configs"]:
             self.configs.append(Config(data["configs"][config], config))
 
+        self.curseforge_id = None
+
+        if check_option(data, "curseforge_id"):
+            self.curseforge_id = data["curseforge_id"]
+
 
 class Config:
     def __init__(self, config, name):
         self.name = name
-        self.mc_version = config["mc_version"]
+        self.mc_version = config["mc_versions"][0]
+        self.mc_versions = config["mc_versions"]
         self.delete_textures = config["textures"]["delete"]
         self.ignore_textures = config["textures"]["ignore"]
         self.regenerate_meta = config["regenerate_meta"]

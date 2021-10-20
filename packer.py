@@ -3,7 +3,9 @@ import zipfile
 from threading import Thread
 from time import time
 
+import curseforge
 from configs import *
+from curseforge import UploadFileRequest
 from patch import *
 from settings import *
 
@@ -72,6 +74,7 @@ def zip_dir(src, dest):
 RUN_TYPE_CONFIG = "config"
 RUN_TYPE_DEV = "dev"
 RUN_TYPE_MANUAL = "manual"
+RUN_TYPE_PUBLISH = "publish"
 
 
 class Packer:
@@ -91,15 +94,24 @@ class Packer:
             self.parent = parent
 
     def start(self):
-        if self.RUN_TYPE == RUN_TYPE_CONFIG:
+        if self.RUN_TYPE.lower() == RUN_TYPE_CONFIG:
             self._pack_configs()
-        elif self.RUN_TYPE == RUN_TYPE_DEV:
+        elif self.RUN_TYPE.lower() == RUN_TYPE_DEV:
             self._pack_dev()
-        elif self.RUN_TYPE == RUN_TYPE_MANUAL:
+        elif self.RUN_TYPE.lower() == RUN_TYPE_MANUAL:
             self._pack_manual()
+        elif self.RUN_TYPE.lower() == RUN_TYPE_PUBLISH:
+            self._pack_configs(publish=True)
 
-    def _pack_configs(self):
+    def _pack_configs(self, publish=False):
         """Automatically packs a resource pack with the config file"""
+        if publish:
+            if input("Publish to www.curseforge.com? Y/N\n").lower() != "y":
+                publish = False
+                print("Request canceled.")
+            else:
+                input("Hit 'ENTER' to continue and publish to curseforge...")
+
         self.pack = input("Pack Name: ")
 
         self.pack_info = PackInfo(self.pack)
@@ -110,14 +122,19 @@ class Packer:
 
         version = input("Resource Pack Version: ")
 
+        self.release_type = input("Release Type ('alpha', 'beta', 'release'): ")
+
         clear_temp(self.TEMP_DIR)
 
         start_time = time()
 
+        if publish:
+            curseforge.init()
+
         threads = []
 
         for config in self.pack_info.configs:
-            thread = Thread(target=self._pack, args=[config, version])
+            thread = Thread(target=self._pack, args=[config, version, False, publish])
             threads.append(thread)
             thread.start()
 
@@ -201,7 +218,7 @@ class Packer:
 
         print(f"Time: {time() - start_time} Seconds")
 
-    def _pack(self, config, version, dev=False):
+    def _pack(self, config, version, dev=False, publish=False):
         pack_name = parse_name_scheme_keywords(self.pack_info.name_scheme, path.basename(self.pack_dir), version,
                                                config.mc_version)
         print(f"Config: {pack_name}")
@@ -236,7 +253,17 @@ class Packer:
 
         # Zip
         if not dev:
-            self._zip_pack(temp_pack_dir)
+            if publish:
+                output = temp_pack_dir + ".zip"
+            else:
+                output = path.normpath(path.join(self.OUT_DIR, path.basename(temp_pack_dir) + ".zip"))
+
+            self._zip_pack(temp_pack_dir, output)
+            print(f"Completed pack: {output}")
+
+            # Publish to CurseForge
+            if publish:
+                UploadFileRequest(self.pack_info, config, output, temp_pack_dir, pack_name, self.release_type).upload()
 
     def _copy_pack(self, src, dest):
         files = glob(path.join(src, "**"), recursive=True)
@@ -294,11 +321,8 @@ class Packer:
 
             json.dump(data, file, ensure_ascii=False, indent=2)
 
-    def _zip_pack(self, pack):
-        output = path.normpath(path.join(self.OUT_DIR, path.basename(pack) + ".zip"))
-
+    def _zip_pack(self, pack, output):
         if path.exists(output):
             os.remove(output)
 
         zip_dir(pack, output)
-        print(f"Completed pack sent to: {self.OUT_DIR}")
