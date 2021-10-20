@@ -2,6 +2,7 @@ import json
 from os import path
 
 import requests
+from markdown import markdown
 
 from settings import MAIN_SETTINGS
 
@@ -11,6 +12,11 @@ URL_VERSIONS = f"{URL_CURSEFORGE}/api/game/versions"
 RELEASE_TYPE_ALPHA = "alpha"
 RELEASE_TYPE_BETA = "beta"
 RELEASE_TYPE_RELEASE = "release"
+
+CHANGELOG_TYPE_HTML = "html"
+CHANGELOG_TYPE_MARKDOWN = "markdown"
+CHANGELOG_TYPE_MARKDOWN_HTML = "markdown-html"
+
 
 VERSIONS = []
 
@@ -65,12 +71,25 @@ def versions_to_ids(names, versions):
     return ids
 
 
-def get_changelog(temp_pack_dir):
-    changelog_dir = path.join(temp_pack_dir, "changelog.md")
+def get_changelog(temp_pack_dir, changelog_type):
+    if changelog_type == CHANGELOG_TYPE_HTML:
+        changelog_dir = path.join(temp_pack_dir, "changelog.html")
+    elif changelog_type == CHANGELOG_TYPE_MARKDOWN:
+        changelog_dir = path.join(temp_pack_dir, "changelog.md")
+    elif changelog_type == CHANGELOG_TYPE_MARKDOWN_HTML:
+        changelog_dir = path.join(temp_pack_dir, "changelog.md")
+    else:
+        return ""
 
     if path.exists(changelog_dir):
         with open(changelog_dir, "r") as changelog:
-            return changelog.read()
+            changelog_content = changelog.read()
+
+            # Converts to html if set to markdown-html
+            if changelog_type == CHANGELOG_TYPE_MARKDOWN_HTML:
+                changelog_content = markdown(changelog_content)
+
+            return changelog_content
     else:
         print(f"Changelog not found: {changelog_dir}")
         return None
@@ -88,6 +107,18 @@ def parse_release_type(release_type):
         return RELEASE_TYPE_RELEASE
 
 
+def parse_changelog_type(changelog_type):
+    if changelog_type == CHANGELOG_TYPE_HTML:
+        return CHANGELOG_TYPE_HTML
+    elif changelog_type == CHANGELOG_TYPE_MARKDOWN:
+        return CHANGELOG_TYPE_MARKDOWN
+    elif changelog_type == CHANGELOG_TYPE_MARKDOWN_HTML:
+        return CHANGELOG_TYPE_MARKDOWN_HTML
+    else:
+        print(f"Incorrect changelog type: {changelog_type}, defaulting to: {CHANGELOG_TYPE_MARKDOWN}")
+        return CHANGELOG_TYPE_MARKDOWN
+
+
 def init():
     global VERSIONS
     # All of the versions of minecraft on curseforge
@@ -99,9 +130,10 @@ class UploadFileRequest:
         self.pack_info = pack_info
         self.config = config
         self.output_dir = output_dir
+        print(get_changelog(temp_pack_dir, CHANGELOG_TYPE_MARKDOWN_HTML))
         self.metadata = {
-            "changelog": get_changelog(temp_pack_dir),
-            "changelogType": "markdown",
+            "changelog": get_changelog(temp_pack_dir, self.pack_info.curseforge_changelog_type),
+            "changelogType": parse_changelog_type(self.pack_info.curseforge_changelog_type),
             "displayName": pack_name,
             "gameVersions": versions_to_ids(config.mc_versions, VERSIONS),
             "releaseType": parse_release_type(release_type),
@@ -109,10 +141,9 @@ class UploadFileRequest:
 
     def upload(self):
         with open(self.output_dir, "rb") as file:
-            print(self.metadata)
-            #upload = requests.post(f"{URL_CURSEFORGE}/api/projects/{self.pack_info.curseforge_id}/upload-file",
-            #                       params={"token": MAIN_SETTINGS.curseforge},
-            #                       data={"metadata": json.dumps(self.metadata, ensure_ascii=False)},
-            #                       files={"file": file})
-            #
-            #print(upload.json())
+            upload = requests.post(f"{URL_CURSEFORGE}/api/projects/{self.pack_info.curseforge_id}/upload-file",
+                                   params={"token": MAIN_SETTINGS.curseforge},
+                                   data={"metadata": json.dumps(self.metadata, ensure_ascii=False)},
+                                   files={"file": file})
+
+            print(upload.json())
