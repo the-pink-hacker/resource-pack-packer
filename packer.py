@@ -251,6 +251,15 @@ class Packer:
             for patch in config.patches:
                 patch_pack(temp_pack_dir, patch)
 
+        # Delete Empty Folders
+        if config.delete_empty_folders:
+            directories = glob(path.join(temp_pack_dir, "**"), recursive=True)
+
+            for directory in directories:
+                if path.isdir(directory) and path.exists(directory):
+                    if len(glob(path.join(directory, "**"), recursive=True)) == 1:
+                        os.remove(directory)
+
         # Zip
         if not dev:
             if publish:

@@ -84,6 +84,12 @@ class Config:
         self.mc_versions = config["mc_versions"]
         self.delete_textures = config["textures"]["delete"]
         self.ignore_textures = config["textures"]["ignore"]
+
+        self.delete_empty_folders = False
+
+        if check_option(config, "delete_empty_folders"):
+            self.delete_empty_folders = config["delete_empty_folders"]
+
         self.regenerate_meta = config["regenerate_meta"]
         self.patches = []
 
