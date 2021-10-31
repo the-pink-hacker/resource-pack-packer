@@ -1,7 +1,7 @@
 from packer import *
 
 
-RUN_TYPE = input("Run as:\nconfig\ndev\nmanual\n\n").lower()
+RUN_TYPE = input("Run as:\nconfig\ndev\nmanual\npublish\n\n").lower()
 
 packer = Packer(RUN_TYPE)
 

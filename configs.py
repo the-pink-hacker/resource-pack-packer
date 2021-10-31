@@ -2,6 +2,7 @@ import json
 from glob import glob
 from os import path
 
+from curseforge import CHANGELOG_TYPE_MARKDOWN
 from patch import get_patches
 from settings import *
 
@@ -66,11 +67,21 @@ class PackInfo:
         for config in data["configs"]:
             self.configs.append(Config(data["configs"][config], config))
 
+        self.curseforge_id = None
+        self.curseforge_changelog_type = CHANGELOG_TYPE_MARKDOWN
+
+        if check_option(data, "curseforge"):
+            self.curseforge_id = data["curseforge"]["id"]
+
+            if check_option(data["curseforge"], "changelog_type"):
+                self.curseforge_id = data["curseforge"]["changelog_type"]
+
 
 class Config:
     def __init__(self, config, name):
         self.name = name
-        self.mc_version = config["mc_version"]
+        self.mc_version = config["mc_versions"][0]
+        self.mc_versions = config["mc_versions"]
         self.delete_textures = config["textures"]["delete"]
         self.ignore_textures = config["textures"]["ignore"]
         self.regenerate_meta = config["regenerate_meta"]
