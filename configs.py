@@ -59,7 +59,7 @@ class PackInfo:
         self.name_scheme = data["name_scheme"]
         self.dependencies = []
 
-        if check_option(data, "dev") and check_option(data["data"], "dependencies"):
+        if check_option(data, "dev") and check_option(data["dev"], "dependencies"):
             self.dependencies = data["dev"]["dependencies"]
 
         self.configs = []
