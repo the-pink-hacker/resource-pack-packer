@@ -9,6 +9,7 @@ from settings import parse_dir_keywords, MAIN_SETTINGS
 PATCH_TYPE_REPLACE = "replace"
 PATCH_TYPE_REMOVE = "remove"
 PATCH_TYPE_MULTI = "multi"
+PATCH_TYPE_MIXIN_JSON = "mixin_json"
 
 
 def check_option(root, option):
@@ -190,6 +191,59 @@ def _patch_multi(pack, patch):
         patch_pack(pack, Patch(patch))
 
 
+MIXIN_MODE_APPEND = "append"
+MIXIN_MODE_SET = "set"
+MIXIN_MODE_MERGE = "merge"
+
+
+def _get_json_file(mixin, pack):
+    file_dir = path.join(pack, mixin["file"])
+
+    if path.isfile(file_dir) and path.exists(file_dir):
+        with open(file_dir, "r") as file:
+            return json.load(file)
+
+
+def _set_json_file(mixin, pack, data):
+    file_dir = path.join(pack, mixin["file"])
+
+    if path.isfile(file_dir) and path.exists(file_dir):
+        with open(file_dir, "w") as file:
+            json.dump(data, file, ensure_ascii=False)
+
+
+def _set_json_node(root, location, data, index=0):
+    child_root = root[location[index]]
+
+    if len(location) > index + 1:
+        child_root[location[index + 1]] = _set_json_node(child_root, location, data, index=index + 1)
+        return child_root
+    else:
+        return data
+
+
+# Allows json files to be edited
+def _patch_mixin_json(pack, patch):
+    mixins = patch.patch["mixins"]
+
+    for mixin in mixins:
+        mode = mixin["mode"]
+
+        file = _get_json_file(mixin, pack)
+        modified_file = file
+
+        if mode == MIXIN_MODE_APPEND:
+            pass
+        elif mode == MIXIN_MODE_SET:
+            modified_file = _set_json_node(file, mixin["location"], mixin["data"])
+        elif mode == MIXIN_MODE_APPEND:
+            pass
+        else:
+            return
+
+        _set_json_file(mixin, pack, modified_file)
+
+
 def patch_pack(pack, patch):
     if patch.type == PATCH_TYPE_REPLACE:
         _patch_replace(pack, patch)
@@ -197,5 +251,7 @@ def patch_pack(pack, patch):
         _patch_remove(pack, patch)
     elif patch.type == PATCH_TYPE_MULTI:
         _patch_multi(pack, patch)
+    elif patch.type == PATCH_TYPE_MIXIN_JSON:
+        _patch_mixin_json(pack, patch)
     else:
         print(f"Incorrect patch type: {patch.type}")
