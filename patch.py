@@ -62,7 +62,7 @@ def _patch_replace(pack, patch):
 
 
 def _remove_block(file):
-    if path.isfile(file) and path.exists(path.dirname(file)):
+    if path.exists(file):
         os.remove(file)
 
 
@@ -84,7 +84,7 @@ def _patch_remove(pack, patch):
             parsed_block_file = block_file.replace("[block_name]", block_name)
             parsed_block_file = parsed_block_file.replace("[block_name_plural]", block_name_plural)
 
-            _remove_block(path.join(pack, parsed_block_file))
+            _remove_block(path.join(pack, path.normpath(parsed_block_file)))
 
         print(f"Removed Block: {block_name_plural}")
 
