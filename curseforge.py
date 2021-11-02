@@ -113,7 +113,7 @@ def parse_changelog_type(changelog_type):
     elif changelog_type == CHANGELOG_TYPE_MARKDOWN:
         return CHANGELOG_TYPE_MARKDOWN
     elif changelog_type == CHANGELOG_TYPE_MARKDOWN_HTML:
-        return CHANGELOG_TYPE_MARKDOWN_HTML
+        return CHANGELOG_TYPE_HTML
     else:
         print(f"Incorrect changelog type: {changelog_type}, defaulting to: {CHANGELOG_TYPE_MARKDOWN}")
         return CHANGELOG_TYPE_MARKDOWN
