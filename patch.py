@@ -80,93 +80,11 @@ def _patch_remove(pack, patch):
         else:
             block_name = block_name_plural
 
-        # Models
-        # Normal block
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name_plural}.json"))
+        for block_file in patch.patch["block_files"]:
+            parsed_block_file = block_file.replace("[block_name]", block_name)
+            parsed_block_file = parsed_block_file.replace("[block_name_plural]", block_name_plural)
 
-        # Item
-        _remove_block(path.join(pack, "assets/minecraft/models/item", f"{block_name_plural}.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/item", f"{block_name}_stairs.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/item", f"{block_name}_wall.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/item", f"{block_name}_slab.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/item", f"{block_name}_pressure_plate.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/item", f"{block_name}_fence.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/item", f"{block_name}_fence_gate.json"))
-
-        # Stairs
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_inner.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_inner.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_outer.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_top_inner.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_top_outer.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_top_.json"))
-
-        # Classic 3D only
-        # Bottom
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_north.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_east.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_south.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_west.json"))
-        # Top
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_top_north.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_top_east.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_top_south.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_top_west.json"))
-        # Bottom Inner
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_inner_ne.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_inner_nw.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_inner_se.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_inner_sw.json"))
-        # Top Inner
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_top_inner_ne.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_top_inner_nw.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_top_inner_se.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_top_inner_sw.json"))
-        # Bottom Outer
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_outer_ne.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_outer_nw.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_outer_se.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_outer_sw.json"))
-        # Top Outer
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_top_outer_ne.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_top_outer_nw.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_top_outer_se.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_stairs_top_outer_sw.json"))
-
-        # Slab
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_slab.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_slab_top.json"))
-
-        # Wall
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_wall_post.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_wall_side.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_wall_side_tall.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_wall_inventory.json"))
-
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_pressure_plate.json"))
-
-        # Button
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_button.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_button_pressed.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_button_inventory.json"))
-
-        # Fence
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_fence_post.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_fence_side.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_fence_gate.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_fence_gate_open.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_fence_gate_wall.json"))
-        _remove_block(path.join(pack, "assets/minecraft/models/block", f"{block_name}_fence_gate_wall_open.json"))
-
-        # Blockstates
-        _remove_block(path.join(pack, "assets/minecraft/blockstates", f"{block_name_plural}.json"))
-        _remove_block(path.join(pack, "assets/minecraft/blockstates", f"{block_name}_stairs.json"))
-        _remove_block(path.join(pack, "assets/minecraft/blockstates", f"{block_name}_wall.json"))
-        _remove_block(path.join(pack, "assets/minecraft/blockstates", f"{block_name}_fence.json"))
-        _remove_block(path.join(pack, "assets/minecraft/blockstates", f"{block_name}_fence_gate.json"))
-        _remove_block(path.join(pack, "assets/minecraft/blockstates", f"{block_name}_slab.json"))
-        _remove_block(path.join(pack, "assets/minecraft/blockstates", f"{block_name}_pressure_plate.json"))
-        _remove_block(path.join(pack, "assets/minecraft/blockstates", f"{block_name}_button.json"))
+            _remove_block(path.join(pack, parsed_block_file))
 
         print(f"Removed Block: {block_name_plural}")
 
