@@ -91,6 +91,12 @@ class Config:
             self.delete_empty_folders = config["delete_empty_folders"]
 
         self.regenerate_meta = config["regenerate_meta"]
+
+        self.minify_json = False
+
+        if check_option(config, "minify_json"):
+            self.minify_json = config["minify_json"]
+
         self.patches = []
 
         if check_option(config, "patches"):

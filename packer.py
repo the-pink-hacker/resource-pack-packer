@@ -77,6 +77,14 @@ RUN_TYPE_MANUAL = "manual"
 RUN_TYPE_PUBLISH = "publish"
 
 
+def minify_json(directory):
+    with open(directory, "r") as json_file:
+        data = json.load(json_file)
+
+    with open(directory, "w") as json_file:
+        json.dump(data, json_file, ensure_ascii=False, indent=None)
+
+
 class Packer:
     def __init__(self, run_type, pack=None, parent=None):
         self.RUN_TYPE = run_type
@@ -242,7 +250,15 @@ class Packer:
         # Regenerate Meta
         if config.regenerate_meta:
             print("Regenerating meta...")
-            self.regenerate_meta(temp_pack_dir, config.mc_version)
+            if config.minify_json and not dev:
+                self.regenerate_meta(temp_pack_dir, config.mc_version, indent=None)
+            else:
+                self.regenerate_meta(temp_pack_dir, config.mc_version)
+
+        # Minify Json
+        if config.minify_json and not dev:
+            print("Minifying json files...")
+            self.minify_json_files(temp_pack_dir)
 
         # Patch
         if len(config.patches) > 0:
@@ -317,7 +333,7 @@ class Packer:
                         shutil.rmtree(fold)
                 print(f"Deleted {path.basename(namespace)}'s Textures")
 
-    def regenerate_meta(self, directory, version):
+    def regenerate_meta(self, directory, version, indent=2):
         pack_format = auto_pack(version)
         print(f"Pack Format: {pack_format}")
 
@@ -328,7 +344,14 @@ class Packer:
             if data["pack"]["pack_format"] != pack_format:
                 data["pack"]["pack_format"] = pack_format
 
-            json.dump(data, file, ensure_ascii=False, indent=2)
+            json.dump(data, file, ensure_ascii=False, indent=indent)
+
+    def minify_json_files(self, temp_pack_dir):
+        files = glob(path.join(temp_pack_dir, "**"), recursive=True)
+
+        for file in files:
+            if file.endswith(".json"):
+                minify_json(file)
 
     def _zip_pack(self, pack, output):
         if path.exists(output):
