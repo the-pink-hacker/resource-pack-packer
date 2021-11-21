@@ -4,7 +4,7 @@ from os import path
 import requests
 from markdown import markdown
 
-from settings import MAIN_SETTINGS
+from resource_pack_packer.settings import MAIN_SETTINGS
 
 URL_CURSEFORGE = "https://minecraft.curseforge.com"
 URL_VERSIONS = f"{URL_CURSEFORGE}/api/game/versions"

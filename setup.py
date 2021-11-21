@@ -1,4 +1,4 @@
-from packer import *
+from resource_pack_packer.packer import Packer
 
 
 RUN_TYPE = input("Run as:\nconfig\ndev\nmanual\npublish\n\n").lower()

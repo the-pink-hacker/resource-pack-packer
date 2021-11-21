@@ -2,9 +2,9 @@ import json
 from glob import glob
 from os import path
 
-from curseforge import CHANGELOG_TYPE_MARKDOWN
-from patch import get_patches
-from settings import *
+from resource_pack_packer.curseforge import CHANGELOG_TYPE_MARKDOWN
+from resource_pack_packer.patch import get_patches
+from resource_pack_packer.settings import parse_keyword
 
 
 def parse_name_scheme_keywords(scheme, name, version, mc_version):

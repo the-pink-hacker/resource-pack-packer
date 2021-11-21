@@ -4,7 +4,7 @@ import shutil
 from glob import glob
 from os import path
 
-from settings import parse_dir_keywords, MAIN_SETTINGS
+from resource_pack_packer.settings import MAIN_SETTINGS, parse_dir_keywords
 
 PATCH_TYPE_REPLACE = "replace"
 PATCH_TYPE_REMOVE = "remove"

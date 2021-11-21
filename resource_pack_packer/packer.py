@@ -1,13 +1,17 @@
+import json
 import os
+import shutil
 import zipfile
+from glob import glob
+from os import path
 from threading import Thread
 from time import time
 
-import curseforge
-from configs import *
-from curseforge import UploadFileRequest
-from patch import *
-from settings import *
+from resource_pack_packer import curseforge
+from resource_pack_packer.configs import PackInfo, generate_pack_info, parse_name_scheme_keywords
+from resource_pack_packer.curseforge import UploadFileRequest
+from resource_pack_packer.patch import patch_pack
+from resource_pack_packer.settings import MAIN_SETTINGS, parse_dir_keywords
 
 
 def _auto_pack_check(version, index):
@@ -130,7 +134,8 @@ class Packer:
 
         version = input("Resource Pack Version: ")
 
-        self.release_type = input("Release Type ('alpha', 'beta', 'release'): ")
+        if publish:
+            self.release_type = input("Release Type ('alpha', 'beta', 'release'): ")
 
         clear_temp(self.TEMP_DIR)
 
