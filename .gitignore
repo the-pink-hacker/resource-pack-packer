@@ -27,3 +27,5 @@ temp/
 patches/
 configs/
 
+*.egg-info/
+
