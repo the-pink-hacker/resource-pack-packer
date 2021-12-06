@@ -3,6 +3,7 @@ import os
 import shutil
 import zipfile
 from glob import glob
+from multiprocessing import Pool
 from os import path
 from threading import Thread
 from time import time
@@ -144,16 +145,13 @@ class Packer:
         if publish:
             curseforge.init()
 
-        threads = []
+        thread_args = []
 
         for config in self.pack_info.configs:
-            thread = Thread(target=self._pack, args=[config, version, False, publish])
-            threads.append(thread)
-            thread.start()
+            thread_args.append((config, version, False, publish))
 
-        # Waits for all threads to finish
-        for thread in threads:
-            thread.join()
+        with Pool(os.cpu_count()) as p:
+            p.starmap(self._pack, thread_args)
 
         print(f"Time: {time() - start_time} Seconds")
 
