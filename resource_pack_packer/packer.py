@@ -83,10 +83,10 @@ RUN_TYPE_PUBLISH = "publish"
 
 
 def minify_json(directory):
-    with open(directory, "r") as json_file:
+    with open(directory, "r", encoding="utf8") as json_file:
         data = json.load(json_file)
 
-    with open(directory, "w") as json_file:
+    with open(directory, "w", encoding="utf8") as json_file:
         json.dump(data, json_file, ensure_ascii=False, indent=None)
 
 
@@ -100,11 +100,15 @@ class Packer:
 
         self.PACK_OVERRIDE = pack is not None
 
-        if not self.PACK_OVERRIDE:
-            self.pack = None
-        else:
+        if self.PACK_OVERRIDE:
             self.pack = pack
             self.parent = parent
+        else:
+            self.pack = None
+
+        self.publish = self.RUN_TYPE == RUN_TYPE_PUBLISH
+
+        self.dev = self.RUN_TYPE == RUN_TYPE_DEV
 
     def start(self):
         if self.RUN_TYPE.lower() == RUN_TYPE_CONFIG:
@@ -114,11 +118,11 @@ class Packer:
         elif self.RUN_TYPE.lower() == RUN_TYPE_MANUAL:
             self._pack_manual()
         elif self.RUN_TYPE.lower() == RUN_TYPE_PUBLISH:
-            self._pack_configs(publish=True)
+            self._pack_configs()
 
-    def _pack_configs(self, publish=False):
+    def _pack_configs(self):
         """Automatically packs a resource pack with the config file"""
-        if publish:
+        if self.publish:
             if input("Publish to www.curseforge.com? Y/N\n").lower() != "y":
                 publish = False
                 print("Request canceled.")
@@ -133,25 +137,20 @@ class Packer:
 
         print(f"Located Pack: {self.pack_dir}")
 
-        version = input("Resource Pack Version: ")
+        self.version = input("Resource Pack Version: ")
 
-        if publish:
+        if self.publish:
             self.release_type = input("Release Type ('alpha', 'beta', 'release'): ")
 
         clear_temp(self.TEMP_DIR)
 
         start_time = time()
 
-        if publish:
+        if self.publish:
             curseforge.init()
 
-        thread_args = []
-
-        for config in self.pack_info.configs:
-            thread_args.append((config, version, False, publish))
-
         with Pool(os.cpu_count()) as p:
-            p.starmap(self._pack, thread_args)
+            p.map(self._pack, self.pack_info.configs)
 
         print(f"Time: {time() - start_time} Seconds")
 
@@ -184,9 +183,11 @@ class Packer:
 
         start_time = time()
 
+        self.version = "DEV"
+
         for config in self.pack_info.configs:
             if config.name == self.config:
-                self._pack(config, "DEV", True)
+                self._pack(config)
 
         print(f"{self.pack_dir} - Time: {time() - start_time} Seconds")
 
@@ -202,7 +203,7 @@ class Packer:
 
         print(f"Located Pack: {self.pack_dir}")
 
-        version = input("Resource Pack Version: ")
+        self.version = input("Resource Pack Version: ")
         mc_version = input("Minecraft Version: ")
         delete_textures = input("Delete Textures? y/n: ").lower() == "y"
 
@@ -225,18 +226,18 @@ class Packer:
         self.pack_info = generate_pack_info(self.pack, path.basename(self.pack_dir), mc_version, delete_textures,
                                             ignore_folders, regenerate_meta, patches)
 
-        self._pack(self.pack_info.configs[0], version)
+        self._pack(self.pack_info.configs[0])
 
         print(f"Time: {time() - start_time} Seconds")
 
-    def _pack(self, config, version, dev=False, publish=False):
-        pack_name = parse_name_scheme_keywords(self.pack_info.name_scheme, path.basename(self.pack_dir), version,
+    def _pack(self, config):
+        pack_name = parse_name_scheme_keywords(self.pack_info.name_scheme, path.basename(self.pack_dir), self.version,
                                                config.mc_version)
         print(f"Config: {pack_name}")
 
         temp_pack_dir = path.join(self.TEMP_DIR, pack_name)
 
-        if dev:
+        if self.dev:
             temp_pack_dir = path.join(self.PACK_FOLDER_DIR, pack_name)
             clear_temp(temp_pack_dir)
 
@@ -253,13 +254,13 @@ class Packer:
         # Regenerate Meta
         if config.regenerate_meta:
             print("Regenerating meta...")
-            if config.minify_json and not dev:
+            if config.minify_json and not self.dev:
                 self.regenerate_meta(temp_pack_dir, config.mc_version, indent=None)
             else:
                 self.regenerate_meta(temp_pack_dir, config.mc_version)
 
         # Minify Json
-        if config.minify_json and not dev:
+        if config.minify_json and not self.dev:
             print("Minifying json files...")
             self.minify_json_files(temp_pack_dir)
 
@@ -280,8 +281,8 @@ class Packer:
                         os.remove(directory)
 
         # Zip
-        if not dev:
-            if publish:
+        if not self.dev:
+            if self.publish:
                 output = temp_pack_dir + ".zip"
             else:
                 output = path.normpath(path.join(self.OUT_DIR, path.basename(temp_pack_dir) + ".zip"))
@@ -290,7 +291,7 @@ class Packer:
             print(f"Completed pack: {output}")
 
             # Publish to CurseForge
-            if publish:
+            if self.publish:
                 UploadFileRequest(self.pack_info, config, output, temp_pack_dir, pack_name, self.release_type).upload()
 
     def _copy_pack(self, src, dest):
