@@ -67,12 +67,10 @@ class Settings:
 
 
 def get_settings() -> Settings:
-    print("SETTINGS ARE BEING CREATED!!!")
     # Check if settings file has been created
     if path.exists("settings.json"):
         settings = Settings()
         settings.load()
-        print(settings.patch_dir)
         return settings
     else:
         settings = Settings()
