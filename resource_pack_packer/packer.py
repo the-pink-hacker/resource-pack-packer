@@ -44,13 +44,6 @@ def auto_pack(version):
     return 0
 
 
-def clear_temp(temp_dir):
-    """Clears the temp folder"""
-    if path.exists(temp_dir):
-        print("Clearing Temp...")
-        shutil.rmtree(temp_dir)
-
-
 def filter_selection(packs, selected):
     """Finds the correct pack from a dir"""
     # Checks for match
@@ -70,11 +63,13 @@ def filter_selection(packs, selected):
 
 
 def zip_dir(src, dest):
+    if not path.exists(path.dirname(dest)):
+        os.makedirs(path.dirname(dest))
+
     with zipfile.ZipFile(dest, "w", zipfile.ZIP_DEFLATED) as zip_file:
         for root, dirs, files in os.walk(src):
             for file in files:
                 zip_file.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), src))
-
 
 RUN_TYPE_CONFIG = "config"
 RUN_TYPE_DEV = "dev"
@@ -94,9 +89,9 @@ class Packer:
     def __init__(self, run_type, pack=None, parent=None):
         self.RUN_TYPE = run_type
         self.PACK_FOLDER_DIR = MAIN_SETTINGS.pack_folder
-        self.TEMP_DIR = MAIN_SETTINGS.temp_dir
-        self.OUT_DIR = MAIN_SETTINGS.out_dir
-        self.PATCH_DIR = MAIN_SETTINGS.patch_dir
+        self.TEMP_DIR = parse_dir_keywords(MAIN_SETTINGS.temp_dir)
+        self.OUT_DIR = parse_dir_keywords(MAIN_SETTINGS.out_dir)
+        self.PATCH_DIR = parse_dir_keywords(MAIN_SETTINGS.patch_dir)
 
         self.PACK_OVERRIDE = pack is not None
 
@@ -142,7 +137,8 @@ class Packer:
         if self.publish:
             self.release_type = input("Release Type ('alpha', 'beta', 'release'): ")
 
-        clear_temp(self.TEMP_DIR)
+        self.clear_temp()
+        self.clear_out()
 
         start_time = time()
 
@@ -180,6 +176,8 @@ class Packer:
                 print(f"Packing {pack}")
                 packer = Packer(RUN_TYPE_DEV, pack.replace("_", " "), self)
                 packer.start()
+
+        self.clear_out()
 
         start_time = time()
 
@@ -219,7 +217,8 @@ class Packer:
         if input("Apply patches? y/n: ").lower() == "y":
             patches = input("\tPatches (use comma and space to separate): ").split(", ")
 
-        clear_temp(self.TEMP_DIR)
+        self.clear_temp()
+        self.clear_out()
 
         start_time = time()
 
@@ -239,7 +238,7 @@ class Packer:
 
         if self.dev:
             temp_pack_dir = path.join(self.PACK_FOLDER_DIR, pack_name)
-            clear_temp(temp_pack_dir)
+            self.clear_temp(temp_pack_dir)
 
         print("Copying...")
 
@@ -287,7 +286,7 @@ class Packer:
             else:
                 output = path.normpath(path.join(self.OUT_DIR, path.basename(temp_pack_dir) + ".zip"))
 
-            self._zip_pack(temp_pack_dir, output)
+            zip_dir(temp_pack_dir, output)
             print(f"Completed pack: {output}")
 
             # Publish to CurseForge
@@ -357,8 +356,17 @@ class Packer:
             if file.endswith(".json"):
                 minify_json(file)
 
-    def _zip_pack(self, pack, output):
-        if path.exists(output):
-            os.remove(output)
+    def clear_temp(self, directory=None):
+        """Clears the temp folder"""
+        if directory is None:
+            directory = self.TEMP_DIR
 
-        zip_dir(pack, output)
+        if path.exists(directory):
+            print("Clearing Temp...")
+            shutil.rmtree(directory)
+
+    def clear_out(self):
+        """Clears the out folder"""
+        if path.exists(self.OUT_DIR):
+            print("Clearing Out...")
+            shutil.rmtree(self.OUT_DIR)

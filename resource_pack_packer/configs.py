@@ -2,6 +2,7 @@ import json
 from glob import glob
 from os import path
 
+from resource_pack_packer.settings import MAIN_SETTINGS
 from resource_pack_packer.curseforge import CHANGELOG_TYPE_MARKDOWN
 from resource_pack_packer.patch import get_patches
 from resource_pack_packer.settings import parse_keyword
@@ -15,7 +16,7 @@ def parse_name_scheme_keywords(scheme, name, version, mc_version):
 
 
 def _get_config_file(pack):
-    files = glob(path.join("configs", "*"))
+    files = glob(path.join(MAIN_SETTINGS.working_directory, "configs", "*"))
 
     for file in files:
         if pack.lower() == path.splitext(path.basename(file))[0].replace("_", " ").lower():

@@ -14,6 +14,7 @@ def parse_keyword(directory, keyword, variable):
 
 def parse_dir_keywords(directory):
     directory = parse_keyword(directory, "packdir", MAIN_SETTINGS.pack_folder)
+    directory = parse_keyword(directory, "workdir", MAIN_SETTINGS.working_directory)
     return parse_dir(directory)
 
 
@@ -39,10 +40,10 @@ class Settings:
         with open("settings.json", "r") as file:
             data = json.load(file)
 
-        self.pack_folder = parse_dir(data["locations"]["pack_folder"])
-        self.temp_dir = parse_dir(data["locations"]["temp"])
-        self.out_dir = parse_dir(data["locations"]["out"])
-        self.patch_dir = parse_dir(data["locations"]["patch"])
+        self.pack_folder = data["locations"]["pack_folder"]
+        self.temp_dir = data["locations"]["temp"]
+        self.out_dir = data["locations"]["out"]
+        self.patch_dir = data["locations"]["patch"]
         self.working_directory = data["locations"]["working_directory"]
         self.curseforge = data["api_tokens"]["curseforge"]
 
@@ -66,10 +67,12 @@ class Settings:
 
 
 def get_settings() -> Settings:
+    print("SETTINGS ARE BEING CREATED!!!")
     # Check if settings file has been created
     if path.exists("settings.json"):
         settings = Settings()
         settings.load()
+        print(settings.patch_dir)
         return settings
     else:
         settings = Settings()
