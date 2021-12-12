@@ -29,7 +29,7 @@ def get_patches(patch_names):
 
 
 def get_patch_data(patch):
-    with open(parse_dir_keywords(path.join(MAIN_SETTINGS.patch_dir, f"{patch}.json"))) as file:
+    with open(parse_dir_keywords(path.join(MAIN_SETTINGS.working_directory, MAIN_SETTINGS.patch_dir, f"{patch}.json"))) as file:
         return json.load(file)
 
 
