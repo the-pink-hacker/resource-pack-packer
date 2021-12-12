@@ -130,14 +130,15 @@ def _set_json_file(mixin, pack, data):
             json.dump(data, file, ensure_ascii=False)
 
 
-def _set_json_node(root, location, data, index=0):
+def _set_json_node(root: dict, location, data, index=0):
     child_root = root[location[index]]
 
     if len(location) > index + 1:
         child_root[location[index + 1]] = _set_json_node(child_root, location, data, index=index + 1)
         return child_root
     else:
-        return data
+        root[location[index]] = data
+        return root
 
 
 # Allows json files to be edited
