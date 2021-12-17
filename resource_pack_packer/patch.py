@@ -4,6 +4,8 @@ import shutil
 from glob import glob
 from os import path
 
+from typing import List, Union
+
 from resource_pack_packer.settings import MAIN_SETTINGS, parse_dir_keywords
 
 PATCH_TYPE_REPLACE = "replace"
@@ -29,7 +31,8 @@ def get_patches(patch_names):
 
 
 def get_patch_data(patch):
-    with open(parse_dir_keywords(path.join(MAIN_SETTINGS.working_directory, MAIN_SETTINGS.patch_dir, f"{patch}.json"))) as file:
+    with open(parse_dir_keywords(
+            path.join(MAIN_SETTINGS.working_directory, MAIN_SETTINGS.patch_dir, f"{patch}.json"))) as file:
         return json.load(file)
 
 
@@ -109,61 +112,133 @@ def _patch_multi(pack, patch):
         patch_pack(pack, Patch(patch))
 
 
-MIXIN_MODE_APPEND = "append"
-MIXIN_MODE_SET = "set"
-MIXIN_MODE_MERGE = "merge"
-
-
-def _get_json_file(mixin, pack):
-    file_dir = path.join(pack, mixin["file"])
-
+def _get_json_file(file_dir: str) -> dict:
     if path.isfile(file_dir) and path.exists(file_dir):
         with open(file_dir, "r") as file:
             return json.load(file)
 
 
-def _set_json_file(mixin, pack, data):
-    file_dir = path.join(pack, mixin["file"])
-
+def _set_json_file(file_dir: str, data: dict):
     if path.isfile(file_dir) and path.exists(file_dir):
         with open(file_dir, "w") as file:
-            json.dump(data, file, ensure_ascii=False)
+            json.dump(data, file, ensure_ascii=False, indent="\t")
 
 
-def _set_json_node(root: dict, location, data, index=0):
-    child_root = root[location[index]]
+def _set_json_node(root: dict, location: list, data) -> dict:
+    new_json = data
 
-    if len(location) > index + 1:
-        child_root[location[index + 1]] = _set_json_node(child_root, location, data, index=index + 1)
-        return child_root
+    location.reverse()
+
+    for key in location:
+        new_json = {key: new_json}
+
+    return root | new_json
+
+
+def _check_json_node(root: dict, location: list) -> bool:
+    # For the case that we have an empty element
+    if root is None:
+        return False
+
+    # Check existence of the first key
+    if location[0] in root:
+
+        # if this is the last key in the list, then no need to look further
+        if len(location) == 1:
+            return True
+        else:
+            next_value = location[1:len(location)]
+            return _check_json_node(root[location[0]], next_value)
     else:
-        root[location[index]] = data
-        return root
+        return False
+
+
+MIXIN_SELECTOR_TYPE_PATH = "path"
+MIXIN_SELECTOR_TYPE_LIST = "list"
+MIXIN_SELECTOR_TYPE_CONTENT = "content"
+
+
+class MixinSelector:
+    def __init__(self, selector_type: str, arguments: dict):
+        self.selector_type = selector_type
+        self.arguments = arguments
+
+    def run(self, json_data) -> Union[list, None]:
+        if self.selector_type == MIXIN_SELECTOR_TYPE_PATH:
+            location = str(self.arguments["location"]).split("/")
+            if _check_json_node(json_data, location):
+                return location
+        elif self.selector_type == MIXIN_SELECTOR_TYPE_LIST:
+            pass
+        elif self.selector_type == MIXIN_SELECTOR_TYPE_CONTENT:
+            pass
+        return None
+
+    @staticmethod
+    def parse(data: dict):
+        return MixinSelector(data["type"], data["arguments"])
+
+
+MIXIN_MODIFIER_TYPE_SET = "set"
+MIXIN_MODIFIER_TYPE_MERGE = "merge"
+MIXIN_MODIFIER_TYPE_APPEND = "append"
+MIXIN_MODIFIER_TYPE_REPLACE = "replace"
+
+
+class MixinModifier:
+    def __init__(self, modifier_type: str, arguments: dict):
+        self.modifier_type = modifier_type
+        self.arguments = arguments
+
+    def run(self, file_directory: str, file: dict, json_directory: list):
+        modified_file = file
+
+        if self.modifier_type == MIXIN_MODIFIER_TYPE_SET:
+            modified_file = _set_json_node(file, json_directory, self.arguments["data"])
+        elif self.modifier_type == MIXIN_MODIFIER_TYPE_MERGE:
+            pass
+        elif self.modifier_type == MIXIN_MODIFIER_TYPE_APPEND:
+            pass
+        elif self.modifier_type == MIXIN_MODIFIER_TYPE_REPLACE:
+            pass
+
+        _set_json_file(file_directory, modified_file)
+
+    @staticmethod
+    def parse(data: list):
+        modifiers = []
+        for modifier in data:
+            modifiers.append(MixinModifier(modifier["type"], modifier["arguments"]))
+        return modifiers
+
+
+class Mixin:
+    def __init__(self, file: str, selector: MixinSelector, modifiers: List[MixinModifier], pack: str):
+        self.file = file
+        self.selector = selector
+        self.modifiers = modifiers
+
+        file_data = _get_json_file(os.path.join(pack, self.file))
+
+        json_directory = self.selector.run(file_data)
+
+        for modifier in self.modifiers:
+            modifier.run(os.path.join(pack, self.file), file_data, json_directory)
+
+    @staticmethod
+    def parse(data: dict, pack: str):
+        return Mixin(data["file"], MixinSelector.parse(data["selector"]), MixinModifier.parse(data["modifiers"]), pack)
 
 
 # Allows json files to be edited
-def _patch_mixin_json(pack, patch):
+def _patch_mixin_json(pack: str, patch: Patch):
     mixins = patch.patch["mixins"]
 
-    for mixin in mixins:
-        mode = mixin["mode"]
-
-        file = _get_json_file(mixin, pack)
-        modified_file = file
-
-        if mode == MIXIN_MODE_APPEND:
-            pass
-        elif mode == MIXIN_MODE_SET:
-            modified_file = _set_json_node(file, mixin["location"], mixin["data"])
-        elif mode == MIXIN_MODE_APPEND:
-            pass
-        else:
-            return
-
-        _set_json_file(mixin, pack, modified_file)
+    for data in mixins:
+        mixin = Mixin.parse(data, pack)
 
 
-def patch_pack(pack, patch):
+def patch_pack(pack: str, patch: Patch):
     if patch.type == PATCH_TYPE_REPLACE:
         _patch_replace(pack, patch)
     elif patch.type == PATCH_TYPE_REMOVE:
