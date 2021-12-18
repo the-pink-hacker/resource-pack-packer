@@ -89,9 +89,9 @@ class Packer:
     def __init__(self, run_type, pack=None, parent=None):
         self.RUN_TYPE = run_type
         self.PACK_FOLDER_DIR = MAIN_SETTINGS.pack_folder
-        self.TEMP_DIR = parse_dir_keywords(MAIN_SETTINGS.temp_dir)
-        self.OUT_DIR = parse_dir_keywords(MAIN_SETTINGS.out_dir)
-        self.PATCH_DIR = parse_dir_keywords(MAIN_SETTINGS.patch_dir)
+        self.TEMP_DIR = parse_dir_keywords(os.path.join(MAIN_SETTINGS.working_directory, MAIN_SETTINGS.temp_dir))
+        self.OUT_DIR = parse_dir_keywords(os.path.join(MAIN_SETTINGS.working_directory, MAIN_SETTINGS.out_dir))
+        self.PATCH_DIR = parse_dir_keywords(os.path.join(MAIN_SETTINGS.working_directory, MAIN_SETTINGS.patch_dir))
 
         self.PACK_OVERRIDE = pack is not None
 
