@@ -47,8 +47,6 @@ class Settings:
         self.working_directory = data["locations"]["working_directory"]
         self.curseforge = data["api_tokens"]["curseforge"]
 
-        print(f"Working Dir: {self.working_directory}")
-
     def save(self):
         data = {
             "locations": {
