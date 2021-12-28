@@ -125,14 +125,22 @@ def _set_json_file(file_dir: str, data: dict):
 
 
 def _set_json_node(root: dict, location: list, data) -> dict:
-    new_json = data
+    if len(location) > 1:
+        if location[0] in root:
+            root[location[0]] = _set_json_node(root[location[0]], location[1:], data)
+        else:
+            # If the location does not exist, then it won't attempt a merge (faster).
+            new_json = data
 
-    location.reverse()
+            location.reverse()
 
-    for key in location:
-        new_json = {key: new_json}
+            for key in location:
+                new_json = {key: new_json}
 
-    return root | new_json
+            root = root | new_json
+    else:
+        root[location[0]] = data
+    return root
 
 
 def _check_json_node(root: dict, location: list) -> bool:
@@ -166,8 +174,7 @@ class MixinSelector:
     def run(self, json_data) -> Union[list, None]:
         if self.selector_type == MIXIN_SELECTOR_TYPE_PATH:
             location = str(self.arguments["location"]).split("/")
-            if _check_json_node(json_data, location):
-                return location
+            return location
         elif self.selector_type == MIXIN_SELECTOR_TYPE_LIST:
             pass
         elif self.selector_type == MIXIN_SELECTOR_TYPE_CONTENT:
@@ -213,7 +220,7 @@ class MixinModifier:
 
 
 class Mixin:
-    def __init__(self, files: dict, selector: MixinSelector, modifiers: List[MixinModifier], pack: str):
+    def __init__(self, files: List[str], selector: MixinSelector, modifiers: List[MixinModifier], pack: str):
         self.files = files
         self.selector = selector
         self.modifiers = modifiers
