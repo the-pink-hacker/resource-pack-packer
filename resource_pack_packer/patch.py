@@ -213,21 +213,22 @@ class MixinModifier:
 
 
 class Mixin:
-    def __init__(self, file: str, selector: MixinSelector, modifiers: List[MixinModifier], pack: str):
-        self.file = file
+    def __init__(self, files: dict, selector: MixinSelector, modifiers: List[MixinModifier], pack: str):
+        self.files = files
         self.selector = selector
         self.modifiers = modifiers
 
-        file_data = _get_json_file(os.path.join(pack, self.file))
+        for file in self.files:
+            file_data = _get_json_file(os.path.join(pack, file))
 
-        json_directory = self.selector.run(file_data)
+            json_directory = self.selector.run(file_data)
 
-        for modifier in self.modifiers:
-            modifier.run(os.path.join(pack, self.file), file_data, json_directory)
+            for modifier in self.modifiers:
+                modifier.run(os.path.join(pack, file), file_data, json_directory)
 
     @staticmethod
     def parse(data: dict, pack: str):
-        return Mixin(data["file"], MixinSelector.parse(data["selector"]), MixinModifier.parse(data["modifiers"]), pack)
+        return Mixin(data["files"], MixinSelector.parse(data["selector"]), MixinModifier.parse(data["modifiers"]), pack)
 
 
 # Allows json files to be edited
