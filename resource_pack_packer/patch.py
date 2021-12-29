@@ -124,10 +124,10 @@ def _set_json_file(file_dir: str, data: dict):
             json.dump(data, file, ensure_ascii=False, indent="\t")
 
 
-def _set_json_node(root: dict, location: list, data) -> dict:
+def _set_json_node(root: dict, location: list, data, merge: bool) -> dict:
     if len(location) > 1:
         if location[0] in root:
-            root[location[0]] = _set_json_node(root[location[0]], location[1:], data)
+            root[location[0]] = _set_json_node(root[location[0]], location[1:], data, merge)
         else:
             # If the location does not exist, then it won't attempt a merge (faster).
             new_json = data
@@ -137,9 +137,12 @@ def _set_json_node(root: dict, location: list, data) -> dict:
             for key in location:
                 new_json = {key: new_json}
 
-            root = root | new_json
+            root |= new_json
     else:
-        root[location[0]] = data
+        if merge and isinstance(data, dict) and isinstance(root[location[0]], dict):
+            root[location[0]] |= data
+        else:
+            root[location[0]] = data
     return root
 
 
@@ -201,9 +204,9 @@ class MixinModifier:
         modified_file = file
 
         if self.modifier_type == MIXIN_MODIFIER_TYPE_SET:
-            modified_file = _set_json_node(file, json_directory, self.arguments["data"])
+            modified_file = _set_json_node(file, json_directory, self.arguments["data"], False)
         elif self.modifier_type == MIXIN_MODIFIER_TYPE_MERGE:
-            pass
+            modified_file = _set_json_node(file, json_directory, self.arguments["data"], True)
         elif self.modifier_type == MIXIN_MODIFIER_TYPE_APPEND:
             pass
         elif self.modifier_type == MIXIN_MODIFIER_TYPE_REPLACE:
