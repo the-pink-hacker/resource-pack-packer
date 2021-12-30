@@ -67,8 +67,13 @@ def _remove_block(file):
 
 # Removes all specified files
 def _patch_remove(pack, patch):
-    files = patch.patch["files"]
-    blocks = patch.patch["blocks"]
+    files = []
+    if "files" in patch.patch:
+        files = patch.patch["files"]
+
+    blocks = []
+    if "blocks" in patch.patch:
+        blocks = patch.patch["blocks"]
 
     for block in blocks:
         block_name_plural = block["block"]
