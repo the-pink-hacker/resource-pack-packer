@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import shutil
 from glob import glob
 from os import path
@@ -7,11 +8,6 @@ from os import path
 from typing import List, Union
 
 from resource_pack_packer.settings import MAIN_SETTINGS, parse_dir_keywords
-
-PATCH_TYPE_REPLACE = "replace"
-PATCH_TYPE_REMOVE = "remove"
-PATCH_TYPE_MULTI = "multi"
-PATCH_TYPE_MIXIN_JSON = "mixin_json"
 
 
 def check_option(root, option):
@@ -164,6 +160,45 @@ def _check_json_node(root: dict, location: list) -> bool:
         return False
 
 
+MIXIN_FILE_SELECTOR_TYPE_FILE = "file"
+MIXIN_FILE_SELECTOR_TYPE_PATH = "path"
+
+
+class MixinFileSelector:
+    def __init__(self, selector_type: str, arguments: dict, pack):
+        self.selector_type = selector_type
+        self.arguments = arguments
+        self.pack = pack
+
+    def run(self) -> Union[List[str], None]:
+        if self.selector_type == MIXIN_FILE_SELECTOR_TYPE_FILE:
+            return self.arguments["files"]
+        elif self.selector_type == MIXIN_FILE_SELECTOR_TYPE_PATH:
+            file_path = self.arguments["path"]
+
+            recursive = False
+            if "recursive" in self.arguments:
+                recursive = self.arguments["recursive"]
+
+            files = glob(os.path.join(self.pack, file_path, "*"), recursive=recursive)
+
+            if "regex" in self.arguments:
+                regex = re.compile(self.arguments["regex"])
+
+                sorted_files = []
+                for file in files:
+                    if regex.match(os.path.relpath(file, os.path.join(self.pack, file_path))) is not None:
+                        sorted_files.append(os.path.relpath(file, self.pack))
+                return sorted_files
+            else:
+                return files
+        return None
+
+    @staticmethod
+    def parse(data: dict, pack):
+        return MixinFileSelector(data["type"], data["arguments"], pack)
+
+
 MIXIN_SELECTOR_TYPE_PATH = "path"
 MIXIN_SELECTOR_TYPE_LIST = "list"
 MIXIN_SELECTOR_TYPE_CONTENT = "content"
@@ -223,12 +258,14 @@ class MixinModifier:
 
 
 class Mixin:
-    def __init__(self, files: List[str], selector: MixinSelector, modifiers: List[MixinModifier], pack: str):
-        self.files = files
+    def __init__(self, file_selector: MixinFileSelector, selector: MixinSelector, modifiers: List[MixinModifier], pack: str):
+        self.file_selector = file_selector
         self.selector = selector
         self.modifiers = modifiers
 
-        for file in self.files:
+        files = file_selector.run()
+
+        for file in files:
             file_data = _get_json_file(os.path.join(pack, file))
 
             json_directory = self.selector.run(file_data)
@@ -238,7 +275,9 @@ class Mixin:
 
     @staticmethod
     def parse(data: dict, pack: str):
-        return Mixin(data["files"], MixinSelector.parse(data["selector"]), MixinModifier.parse(data["modifiers"]), pack)
+        return Mixin(MixinFileSelector.parse(data["file_selector"], pack),
+                     MixinSelector.parse(data["selector"]),
+                     MixinModifier.parse(data["modifiers"]), pack)
 
 
 # Allows json files to be edited
@@ -247,6 +286,12 @@ def _patch_mixin_json(pack: str, patch: Patch):
 
     for data in mixins:
         mixin = Mixin.parse(data, pack)
+
+
+PATCH_TYPE_REPLACE = "replace"
+PATCH_TYPE_REMOVE = "remove"
+PATCH_TYPE_MULTI = "multi"
+PATCH_TYPE_MIXIN_JSON = "mixin_json"
 
 
 def patch_pack(pack: str, patch: Patch):
