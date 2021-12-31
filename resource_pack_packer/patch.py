@@ -125,18 +125,18 @@ def _set_json_file(file_dir: str, data: dict):
             json.dump(data, file, ensure_ascii=False, indent="\t")
 
 
-def _set_json_node(root: Union[list, dict], location: list, data, merge: bool) -> dict:
+def _set_json(root: Union[list, dict], location: list, data, merge: bool) -> dict:
     if len(location) > 1:
         if location[0] == "*":
             if isinstance(root, dict):
                 for key in root.keys():
-                    root[key] = _set_json_node(root[key], location[1:], data, merge)
+                    root[key] = _set_json(root[key], location[1:], data, merge)
             elif isinstance(root, list):
                 for i in range(len(root)):
-                    root[i] = _set_json_node(root[i], location[1:], data, merge)
+                    root[i] = _set_json(root[i], location[1:], data, merge)
         else:
             if location[0] in root:
-                root[location[0]] = _set_json_node(root[location[0]], location[1:], data, merge)
+                root[location[0]] = _set_json(root[location[0]], location[1:], data, merge)
             else:
                 # If the location does not exist, then it won't attempt a merge (faster).
                 new_json = data
@@ -160,6 +160,32 @@ def _set_json_node(root: Union[list, dict], location: list, data, merge: bool) -
                 root[location[0]] |= data
             else:
                 root[location[0]] = data
+    return root
+
+
+def _replace_json(root: Union[list, dict], location: list, select: str, replacement: str) -> dict:
+    if len(location) > 1:
+        if location[0] == "*":
+            if isinstance(root, dict):
+                for key in root.keys():
+                    root[key] = _replace_json(root[key], location[1:], select, replacement)
+            elif isinstance(root, list):
+                for i in range(len(root)):
+                    root[i] = _replace_json(root[i], location[1:], select, replacement)
+        else:
+            # Checks if the key exits
+            if location[0] in root:
+                root[location[0]] = _replace_json(root[location[0]], location[1:], select, replacement)
+    else:
+        if location[0] == "*":
+            if isinstance(root, dict):
+                for key, value in root.items():
+                    root[key] = re.sub(select, replacement, value)
+            elif isinstance(root, list):
+                for value, i in iter(root):
+                    root[i] = re.sub(select, replacement, value)
+        else:
+            root[location[0]] = re.sub(select, replacement, root[location[0]])
     return root
 
 
@@ -221,8 +247,6 @@ class MixinFileSelector:
 
 
 MIXIN_SELECTOR_TYPE_PATH = "path"
-MIXIN_SELECTOR_TYPE_LIST = "list"
-MIXIN_SELECTOR_TYPE_CONTENT = "content"
 
 
 class MixinSelector:
@@ -234,11 +258,6 @@ class MixinSelector:
         if self.selector_type == MIXIN_SELECTOR_TYPE_PATH:
             location = str(self.arguments["location"]).split("/")
             return location
-        elif self.selector_type == MIXIN_SELECTOR_TYPE_LIST:
-            pass
-        elif self.selector_type == MIXIN_SELECTOR_TYPE_CONTENT:
-            pass
-        return None
 
     @staticmethod
     def parse(data: dict):
@@ -247,7 +266,6 @@ class MixinSelector:
 
 MIXIN_MODIFIER_TYPE_SET = "set"
 MIXIN_MODIFIER_TYPE_MERGE = "merge"
-MIXIN_MODIFIER_TYPE_APPEND = "append"
 MIXIN_MODIFIER_TYPE_REPLACE = "replace"
 
 
@@ -260,13 +278,11 @@ class MixinModifier:
         modified_file = file
 
         if self.modifier_type == MIXIN_MODIFIER_TYPE_SET:
-            modified_file = _set_json_node(file, json_directory, self.arguments["data"], False)
+            modified_file = _set_json(file, json_directory, self.arguments["data"], False)
         elif self.modifier_type == MIXIN_MODIFIER_TYPE_MERGE:
-            modified_file = _set_json_node(file, json_directory, self.arguments["data"], True)
-        elif self.modifier_type == MIXIN_MODIFIER_TYPE_APPEND:
-            pass
+            modified_file = _set_json(file, json_directory, self.arguments["data"], True)
         elif self.modifier_type == MIXIN_MODIFIER_TYPE_REPLACE:
-            pass
+            modified_file = _replace_json(file, json_directory, self.arguments["select"], self.arguments["replacement"])
 
         _set_json_file(file_directory, modified_file)
 
