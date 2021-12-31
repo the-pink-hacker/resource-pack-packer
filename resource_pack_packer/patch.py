@@ -186,7 +186,7 @@ def _replace_json(root: Union[list, dict], location: list, select: str, replacem
             elif isinstance(root, list):
                 for value, i in iter(root):
                     root[i] = re.sub(select, replacement, value)
-        else:
+        elif isinstance(root, dict):
             root[location[0]] = re.sub(select, replacement, root[location[0]])
     return root
 
