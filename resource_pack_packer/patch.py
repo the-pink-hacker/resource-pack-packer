@@ -3,6 +3,7 @@ import os
 import re
 import shutil
 from glob import glob
+from multiprocessing import Pool
 from os import path
 
 from typing import List, Union
@@ -304,16 +305,19 @@ class Mixin:
         self.file_selector = file_selector
         self.selector = selector
         self.modifiers = modifiers
+        self.pack = pack
 
-        files = file_selector.run()
+    def run(self):
+        with Pool(os.cpu_count()) as p:
+            p.map(self._run_file, self.file_selector.run())
 
-        for file in files:
-            file_data = _get_json_file(os.path.join(pack, file))
+    def _run_file(self, file):
+        file_data = _get_json_file(os.path.join(self.pack, file))
 
-            json_directory = self.selector.run(file_data)
+        json_directory = self.selector.run(file_data)
 
-            for modifier in self.modifiers:
-                modifier.run(os.path.join(pack, file), file_data, json_directory)
+        for modifier in self.modifiers:
+            modifier.run(os.path.join(self.pack, file), file_data, json_directory)
 
     @staticmethod
     def parse(data: dict, pack: str):
@@ -328,6 +332,7 @@ def _patch_mixin_json(pack: str, patch: Patch):
 
     for data in mixins:
         mixin = Mixin.parse(data, pack)
+        mixin.run()
 
 
 PATCH_TYPE_REPLACE = "replace"
