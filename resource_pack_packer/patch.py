@@ -125,25 +125,41 @@ def _set_json_file(file_dir: str, data: dict):
             json.dump(data, file, ensure_ascii=False, indent="\t")
 
 
-def _set_json_node(root: dict, location: list, data, merge: bool) -> dict:
+def _set_json_node(root: Union[list, dict], location: list, data, merge: bool) -> dict:
     if len(location) > 1:
-        if location[0] in root:
-            root[location[0]] = _set_json_node(root[location[0]], location[1:], data, merge)
+        if location[0] == "*":
+            if isinstance(root, dict):
+                for key in root.keys():
+                    root[key] = _set_json_node(root[key], location[1:], data, merge)
+            elif isinstance(root, list):
+                for i in range(len(root)):
+                    root[i] = _set_json_node(root[i], location[1:], data, merge)
         else:
-            # If the location does not exist, then it won't attempt a merge (faster).
-            new_json = data
+            if location[0] in root:
+                root[location[0]] = _set_json_node(root[location[0]], location[1:], data, merge)
+            else:
+                # If the location does not exist, then it won't attempt a merge (faster).
+                new_json = data
 
-            location.reverse()
+                location.reverse()
 
-            for key in location:
-                new_json = {key: new_json}
+                for key in location:
+                    new_json = {key: new_json}
 
-            root |= new_json
+                root |= new_json
     else:
-        if merge and isinstance(data, dict) and isinstance(root[location[0]], dict):
-            root[location[0]] |= data
+        if location[0] == "*":
+            if isinstance(root, dict):
+                for key in root.keys():
+                    root[key] = data
+            elif isinstance(root, list):
+                for i in range(len(root)):
+                    root[i] = data
         else:
-            root[location[0]] = data
+            if merge and isinstance(data, dict) and isinstance(root[location[0]], dict):
+                root[location[0]] |= data
+            else:
+                root[location[0]] = data
     return root
 
 
