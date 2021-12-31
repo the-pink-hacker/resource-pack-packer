@@ -309,8 +309,9 @@ class Mixin:
         self.pack = pack
 
     def run(self):
-        with billiard.pool.Pool(processes=os.cpu_count()) as p:
-            p.map(self._run_file, self.file_selector.run())
+        files = self.file_selector.run()
+        for file in files:
+            self._run_file(file)
 
     def _run_file(self, file):
         file_data = _get_json_file(os.path.join(self.pack, file))
