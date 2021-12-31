@@ -3,10 +3,11 @@ import os
 import shutil
 import zipfile
 from glob import glob
-from multiprocessing import Pool
 from os import path
 from threading import Thread
 from time import time
+
+import billiard.pool
 
 from resource_pack_packer import curseforge
 from resource_pack_packer.configs import PackInfo, generate_pack_info, parse_name_scheme_keywords
@@ -71,6 +72,7 @@ def zip_dir(src, dest):
             for file in files:
                 zip_file.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), src))
 
+
 RUN_TYPE_CONFIG = "config"
 RUN_TYPE_DEV = "dev"
 RUN_TYPE_MANUAL = "manual"
@@ -78,11 +80,12 @@ RUN_TYPE_PUBLISH = "publish"
 
 
 def minify_json(directory):
-    with open(directory, "r", encoding="utf8") as json_file:
-        data = json.load(json_file)
+    if directory.endswith(".json"):
+        with open(directory, "r", encoding="utf8") as json_file:
+            data = json.load(json_file)
 
-    with open(directory, "w", encoding="utf8") as json_file:
-        json.dump(data, json_file, ensure_ascii=False, indent=None)
+        with open(directory, "w", encoding="utf8") as json_file:
+            json.dump(data, json_file, ensure_ascii=False, indent=None)
 
 
 class Packer:
@@ -145,7 +148,7 @@ class Packer:
         if self.publish:
             curseforge.init()
 
-        with Pool(os.cpu_count()) as p:
+        with billiard.pool.Pool(processes=os.cpu_count()) as p:
             p.map(self._pack, self.pack_info.configs)
 
         print(f"Time: {time() - start_time} Seconds")
@@ -172,10 +175,8 @@ class Packer:
         if len(self.pack_info.dependencies) > 0:
             print(f"Packing {self.pack}'s dependencies...")
 
-            for pack in self.pack_info.dependencies:
-                print(f"Packing {pack}")
-                packer = Packer(RUN_TYPE_DEV, pack.replace("_", " "), self)
-                packer.start()
+            with billiard.pool.Pool(processes=os.cpu_count()) as p:
+                p.map(self._pack_dependencies, self.pack_info.dependencies)
 
         self.clear_out()
 
@@ -228,6 +229,11 @@ class Packer:
         self._pack(self.pack_info.configs[0])
 
         print(f"Time: {time() - start_time} Seconds")
+
+    def _pack_dependencies(self, pack):
+        print(f"Packing {pack}")
+        packer = Packer(RUN_TYPE_DEV, pack.replace("_", " "), self)
+        packer.start()
 
     def _pack(self, config):
         pack_name = parse_name_scheme_keywords(self.pack_info.name_scheme, path.basename(self.pack_dir), self.version,
@@ -353,8 +359,7 @@ class Packer:
         files = glob(path.join(temp_pack_dir, "**"), recursive=True)
 
         for file in files:
-            if file.endswith(".json"):
-                minify_json(file)
+            minify_json(file)
 
     def clear_temp(self, directory=None):
         """Clears the temp folder"""

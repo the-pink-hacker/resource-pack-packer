@@ -3,10 +3,11 @@ import os
 import re
 import shutil
 from glob import glob
-from multiprocessing import Pool
 from os import path
 
 from typing import List, Union
+
+import billiard.pool
 
 from resource_pack_packer.settings import MAIN_SETTINGS, parse_dir_keywords
 
@@ -308,7 +309,7 @@ class Mixin:
         self.pack = pack
 
     def run(self):
-        with Pool(os.cpu_count()) as p:
+        with billiard.pool.Pool(processes=os.cpu_count()) as p:
             p.map(self._run_file, self.file_selector.run())
 
     def _run_file(self, file):
