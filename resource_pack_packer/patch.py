@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import re
 import shutil
@@ -92,7 +93,7 @@ def _patch_remove(pack, patch):
 
             _remove_block(path.join(pack, path.normpath(parsed_block_file)))
 
-        print(f"Removed Block: {block_name_plural}")
+        logging.info(f"Removed Block: {block_name_plural}")
 
     for file in files:
         file_abs = path.join(pack, file)
@@ -100,7 +101,7 @@ def _patch_remove(pack, patch):
         # Removes file
         if path.isfile(file_abs) and path.exists(path.dirname(file_abs)):
             os.remove(file_abs)
-            print(f"removed: {file_abs}")
+            logging.info(f"removed: {file_abs}")
 
         # Removes folder
         if path.exists(file_abs):
@@ -353,4 +354,4 @@ def patch_pack(pack: str, patch: Patch):
     elif patch.type == PATCH_TYPE_MIXIN_JSON:
         _patch_mixin_json(pack, patch)
     else:
-        print(f"Incorrect patch type: {patch.type}")
+        logging.warning(f"Incorrect patch type: {patch.type}")

@@ -1,4 +1,5 @@
 import json
+import logging
 from os import path
 
 import requests
@@ -27,7 +28,7 @@ def get_versions():
     if versions.ok:
         return versions.json()
     else:
-        print(f"Could not get versions list: {versions}")
+        logging.warning(f"Could not get versions list: {versions}")
         return None
 
 
@@ -42,20 +43,18 @@ def get_game_version(version, versions):
         if ver["name"] == snapshot_version:
             return ver["gameVersionTypeID"]
 
-    print("Could not find game version")
+    logging.warning("Could not find game version")
     return None
 
 
 def get_version_id(name, versions):
     game_version = get_game_version(name, versions)
 
-    print(game_version)
-
     for version in versions:
         if version["name"] == name:
             if version["gameVersionTypeID"] == game_version:
                 return version["id"]
-    print(f"Version not found: {name}")
+    logging.warning(f"Version not found: {name}")
     return None
 
 
@@ -91,7 +90,7 @@ def get_changelog(temp_pack_dir, changelog_type):
 
             return changelog_content
     else:
-        print(f"Changelog not found: {changelog_dir}")
+        logging.warning(f"Changelog not found: {changelog_dir}")
         return None
 
 
@@ -103,7 +102,7 @@ def parse_release_type(release_type):
     elif release_type.lower() == RELEASE_TYPE_ALPHA:
         return RELEASE_TYPE_ALPHA
     else:
-        print(f"Incorrect release type: {release_type}, defaulting to: {RELEASE_TYPE_RELEASE}")
+        logging.warning(f"Incorrect release type: {release_type}, defaulting to: {RELEASE_TYPE_RELEASE}")
         return RELEASE_TYPE_RELEASE
 
 
@@ -115,7 +114,7 @@ def parse_changelog_type(changelog_type):
     elif changelog_type == CHANGELOG_TYPE_MARKDOWN_HTML:
         return CHANGELOG_TYPE_HTML
     else:
-        print(f"Incorrect changelog type: {changelog_type}, defaulting to: {CHANGELOG_TYPE_MARKDOWN}")
+        logging.warning(f"Incorrect changelog type: {changelog_type}, defaulting to: {CHANGELOG_TYPE_MARKDOWN}")
         return CHANGELOG_TYPE_MARKDOWN
 
 
@@ -130,7 +129,7 @@ class UploadFileRequest:
         self.pack_info = pack_info
         self.config = config
         self.output_dir = output_dir
-        print(get_changelog(temp_pack_dir, CHANGELOG_TYPE_MARKDOWN_HTML))
+        logging.info(get_changelog(temp_pack_dir, CHANGELOG_TYPE_MARKDOWN_HTML))
         self.metadata = {
             "changelog": get_changelog(temp_pack_dir, self.pack_info.curseforge_changelog_type),
             "changelogType": parse_changelog_type(self.pack_info.curseforge_changelog_type),
@@ -146,4 +145,4 @@ class UploadFileRequest:
                                    data={"metadata": json.dumps(self.metadata, ensure_ascii=False)},
                                    files={"file": file})
 
-            print(upload.json())
+            logging.info(upload.json())

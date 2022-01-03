@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import shutil
 import zipfile
@@ -59,7 +60,7 @@ def filter_selection(packs, selected):
     for pack in packs:
         if selected.lower() in pack.lower():
             return pack
-    print(f"Could not find: {selected}")
+    logging.warning(f"Could not find: {selected}")
     return None
 
 
@@ -123,7 +124,7 @@ class Packer:
         if self.publish:
             if input("Publish to www.curseforge.com? Y/N\n").lower() != "y":
                 publish = False
-                print("Request canceled.")
+                logging.info("Request canceled.")
             else:
                 input("Hit 'ENTER' to continue and publish to curseforge...")
 
@@ -133,7 +134,7 @@ class Packer:
 
         self.pack_dir = parse_dir_keywords(self.pack_info.directory)
 
-        print(f"Located Pack: {self.pack_dir}")
+        logging.info(f"Located Pack: {self.pack_dir}")
 
         self.version = input("Resource Pack Version: ")
 
@@ -151,7 +152,7 @@ class Packer:
         with billiard.pool.Pool(processes=os.cpu_count()) as p:
             p.map(self._pack, self.pack_info.configs)
 
-        print(f"Time: {time() - start_time} Seconds")
+        logging.info(f"Time: {time() - start_time} Seconds")
 
     def _pack_dev(self, rerun=False):
         """Outputs a single config into your resource pack folder for development purposes"""
@@ -163,7 +164,7 @@ class Packer:
 
         self.pack_dir = parse_dir_keywords(self.pack_info.directory)
 
-        print(f"Located Pack: {self.pack_dir}")
+        logging.info(f"Located Pack: {self.pack_dir}")
 
         if not rerun:
             if not self.PACK_OVERRIDE:
@@ -188,7 +189,7 @@ class Packer:
             if config.name == self.config:
                 self._pack(config)
 
-        print(f"{self.pack_dir} - Time: {time() - start_time} Seconds")
+        logging.info(f"{self.pack_dir} - Time: {time() - start_time} Seconds")
 
         if not self.PACK_OVERRIDE:
             input("Hit enter to rerun")
@@ -200,7 +201,7 @@ class Packer:
 
         self.pack_dir = filter_selection(glob(path.join(self.PACK_FOLDER_DIR, "*")), self.pack)
 
-        print(f"Located Pack: {self.pack_dir}")
+        logging.info(f"Located Pack: {self.pack_dir}")
 
         self.version = input("Resource Pack Version: ")
         mc_version = input("Minecraft Version: ")
@@ -228,17 +229,17 @@ class Packer:
 
         self._pack(self.pack_info.configs[0])
 
-        print(f"Time: {time() - start_time} Seconds")
+        logging.info(f"Time: {time() - start_time} Seconds")
 
     def _pack_dependencies(self, pack):
-        print(f"Packing {pack}")
+        logging.info(f"Packing {pack}")
         packer = Packer(RUN_TYPE_DEV, pack.replace("_", " "), self)
         packer.start()
 
     def _pack(self, config):
         pack_name = parse_name_scheme_keywords(self.pack_info.name_scheme, path.basename(self.pack_dir), self.version,
                                                config.mc_version)
-        print(f"Config: {pack_name}")
+        logging.info(f"Config: {pack_name}")
 
         temp_pack_dir = path.join(self.TEMP_DIR, pack_name)
 
@@ -246,19 +247,19 @@ class Packer:
             temp_pack_dir = path.join(self.PACK_FOLDER_DIR, pack_name)
             self.clear_temp(temp_pack_dir)
 
-        print("Copying...")
+        logging.info("Copying...")
 
         # Copy Files
         self._copy_pack(self.pack_dir, temp_pack_dir)
 
         # Delete Textures
         if config.delete_textures:
-            print("Deleting textures...")
+            logging.info("Deleting textures...")
             self.delete(temp_pack_dir, "textures", config.ignore_textures)
 
         # Regenerate Meta
         if config.regenerate_meta:
-            print("Regenerating meta...")
+            logging.info("Regenerating meta...")
             if config.minify_json and not self.dev:
                 self.regenerate_meta(temp_pack_dir, config.mc_version, indent=None)
             else:
@@ -266,12 +267,12 @@ class Packer:
 
         # Minify Json
         if config.minify_json and not self.dev:
-            print("Minifying json files...")
+            logging.info("Minifying json files...")
             self.minify_json_files(temp_pack_dir)
 
         # Patch
         if len(config.patches) > 0:
-            print("Applying patches...")
+            logging.info("Applying patches...")
 
             for patch in config.patches:
                 patch_pack(temp_pack_dir, patch)
@@ -293,7 +294,7 @@ class Packer:
                 output = path.normpath(path.join(self.OUT_DIR, path.basename(temp_pack_dir) + ".zip"))
 
             zip_dir(temp_pack_dir, output)
-            print(f"Completed pack: {output}")
+            logging.info(f"Completed pack: {output}")
 
             # Publish to CurseForge
             if self.publish:
@@ -340,11 +341,11 @@ class Packer:
 
                     if delete_files:
                         shutil.rmtree(fold)
-                print(f"Deleted {path.basename(namespace)}'s Textures")
+                logging.info(f"Deleted {path.basename(namespace)}'s Textures")
 
     def regenerate_meta(self, directory, version, indent=2):
         pack_format = auto_pack(version)
-        print(f"Pack Format: {pack_format}")
+        logging.info(f"Pack Format: {pack_format}")
 
         with open(path.join(directory, "pack.mcmeta"), "r") as file:
             data = json.load(file)
@@ -367,11 +368,11 @@ class Packer:
             directory = self.TEMP_DIR
 
         if path.exists(directory):
-            print("Clearing Temp...")
+            logging.info("Clearing Temp...")
             shutil.rmtree(directory)
 
     def clear_out(self):
         """Clears the out folder"""
         if path.exists(self.OUT_DIR):
-            print("Clearing Out...")
+            logging.info("Clearing Out...")
             shutil.rmtree(self.OUT_DIR)

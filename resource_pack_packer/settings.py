@@ -1,4 +1,5 @@
 import json
+import logging
 import os.path
 from os import path
 import tkinter
@@ -23,7 +24,7 @@ def parse_dir(directory):
 
 
 def folder_dialog(title="Select Folder", directory=os.path.abspath(os.sep)):
-    print(f"Select Folder: {title}")
+    logging.info(f"Select Folder: {title}")
     return parse_dir(filedialog.askdirectory(title=title, initialdir=directory))
 
 
