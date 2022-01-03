@@ -1,10 +1,11 @@
 import json
 from glob import glob
 from os import path
+from typing import List
 
 from resource_pack_packer.settings import MAIN_SETTINGS
 from resource_pack_packer.curseforge import CHANGELOG_TYPE_MARKDOWN
-from resource_pack_packer.patch import get_patches
+from resource_pack_packer.patch import get_patches, Patch
 from resource_pack_packer.settings import parse_keyword
 
 
@@ -98,7 +99,7 @@ class Config:
         if check_option(config, "minify_json"):
             self.minify_json = config["minify_json"]
 
-        self.patches = []
+        self.patches: List[Patch] = []
 
         if check_option(config, "patches"):
             self.patches = get_patches(config["patches"])

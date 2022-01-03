@@ -272,10 +272,10 @@ class Packer:
 
         # Patch
         if len(config.patches) > 0:
-            logging.info("Applying patches...")
-
-            for patch in config.patches:
+            logging.info(f"Applying patches...")
+            for i, patch in enumerate(config.patches, start=1):
                 patch_pack(temp_pack_dir, patch)
+                logging.info(f"Completed patch [{i}/{len(config.patches)}]: {patch.name}")
 
         # Delete Empty Folders
         if config.delete_empty_folders:

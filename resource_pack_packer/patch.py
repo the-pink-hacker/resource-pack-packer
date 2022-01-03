@@ -22,7 +22,7 @@ def get_patches(patch_names):
     patches = []
 
     for patch in patch_names:
-        patches.append(Patch(get_patch_data(patch)))
+        patches.append(Patch(get_patch_data(patch), patch))
 
     return patches
 
@@ -34,9 +34,10 @@ def get_patch_data(patch):
 
 
 class Patch:
-    def __init__(self, data):
+    def __init__(self, data, name):
         self.patch = data["patch"]
         self.type = data["type"]
+        self.name = name
 
 
 # Replaces and adds files accordingly
@@ -76,7 +77,7 @@ def _patch_remove(pack, patch):
     if "blocks" in patch.patch:
         blocks = patch.patch["blocks"]
 
-    for block in blocks:
+    for i, block in enumerate(blocks, start=1):
         block_name_plural = block["block"]
 
         # Example: stone_bricks -> stone_brick
@@ -91,27 +92,30 @@ def _patch_remove(pack, patch):
 
             _remove_block(path.join(pack, path.normpath(parsed_block_file)))
 
-        logging.info(f"Removed Block: {block_name_plural}")
+        logging.info(f"Removed block [{i}/{len(blocks)}]: {block_name_plural}")
 
-    for file in files:
+    for i, file in enumerate(files, start=1):
         file_abs = path.join(pack, file)
 
-        # Removes file
-        if path.isfile(file_abs) and path.exists(path.dirname(file_abs)):
-            os.remove(file_abs)
-            logging.info(f"removed: {file_abs}")
-
-        # Removes folder
-        if path.exists(file_abs):
-            shutil.rmtree(file_abs)
+        if path.exists(path.dirname(file_abs)):
+            # Removes file
+            if path.isfile(file_abs):
+                os.remove(file_abs)
+                logging.info(f"Removed file [{i}/{len(files)}]: {file_abs}")
+            # Removes folder
+            else:
+                shutil.rmtree(file_abs)
+                logging.info(f"Removed folder [{i}/{len(files)}]: {file_abs}")
+        else:
+            logging.error(f"File couldn't be found: {file_abs}")
 
 
 # Contains multiple patches
 def _patch_multi(pack, patch):
     patches = patch.patch
 
-    for patch in patches:
-        patch_pack(pack, Patch(patch))
+    for patch_data in patches:
+        patch_pack(pack, Patch(patch_data, patch.name))
 
 
 def _get_json_file(file_dir: str) -> dict:
@@ -240,7 +244,9 @@ class MixinFileSelector:
                 return sorted_files
             else:
                 return files
-        return None
+        else:
+            logging.error(f"Incorrect file selector type: {self.selector_type}")
+            return
 
     @staticmethod
     def parse(data: dict, pack):
@@ -259,6 +265,8 @@ class MixinSelector:
         if self.selector_type == MIXIN_SELECTOR_TYPE_PATH:
             location = str(self.arguments["location"]).split("/")
             return location
+        else:
+            logging.error(f"Incorrect selector type: {self.selector_type}")
 
     @staticmethod
     def parse(data: dict):
@@ -289,6 +297,8 @@ class MixinModifier:
             modified_file = _set_json(file, json_directory, self.arguments["data"], merge, add)
         elif self.modifier_type == MIXIN_MODIFIER_TYPE_REPLACE:
             modified_file = _replace_json(file, json_directory, self.arguments["select"], self.arguments["replacement"])
+        else:
+            logging.error(f"Incorrect modifier type: {self.modifier_type}")
 
         _set_json_file(file_directory, modified_file)
 
@@ -337,8 +347,9 @@ class Mixin:
 def _patch_mixin_json(pack: str, patch: Patch):
     mixins = patch.patch["mixins"]
 
-    for data in mixins:
+    for i, data in enumerate(mixins, start=1):
         mixin = Mixin.parse(data, pack)
+        logging.info(f"Completed mixin [{i}/{len(mixins)}]")
         mixin.run()
 
 
@@ -358,4 +369,4 @@ def patch_pack(pack: str, patch: Patch):
     elif patch.type == PATCH_TYPE_MIXIN_JSON:
         _patch_mixin_json(pack, patch)
     else:
-        logging.warning(f"Incorrect patch type: {patch.type}")
+        logging.error(f"Incorrect patch type: {patch.type}")
