@@ -8,8 +8,6 @@ from os import path
 
 from typing import List, Union
 
-import billiard.pool
-
 from resource_pack_packer.settings import MAIN_SETTINGS, parse_dir_keywords
 
 
@@ -315,12 +313,18 @@ class Mixin:
             self._run_file(file)
 
     def _run_file(self, file):
-        file_data = _get_json_file(os.path.join(self.pack, file))
+        file_path = os.path.join(self.pack, file)
+        file_data = _get_json_file(file_path)
+
+        # Checks if file exists
+        if file_data is None:
+            logging.error(f"File couldn't be found: {file_path}")
+            return
 
         json_directory = self.selector.run(file_data)
 
         for modifier in self.modifiers:
-            modifier.run(os.path.join(self.pack, file), file_data, json_directory)
+            modifier.run(file_path, file_data, json_directory)
 
     @staticmethod
     def parse(data: dict, pack: str):
