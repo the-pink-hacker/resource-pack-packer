@@ -6,12 +6,14 @@ from resource_pack_packer.settings import MAIN_SETTINGS
 
 def main():
     logging.basicConfig(
-        format="[\x1b[32m%(asctime)s\x1b[0m] | [\x1b[33m%(levelname)s\x1b[0m] | \x1b[36m%(message)s\x1b[0m",
-        datefmt="%Y-%m-%d %H:%M:%S",
+        format="[\x1b[32m%(asctime)s\x1b[0m] | [\x1b[34m%(name)s\x1b[0m] [\x1b[33m%(levelname)s\x1b[0m] | \x1b[36m%(message)s\x1b[0m",
+        datefmt="%H:%M:%S",
         level=logging.INFO
     )
 
-    logging.info(f"Working Dir: {MAIN_SETTINGS.working_directory}")
+    logger = logging.getLogger("Main")
+
+    logger.info(f"Working Dir: {MAIN_SETTINGS.working_directory}")
 
     run_type = input("config\ndev\nmanual\npublish\nworkdir\n\n").lower()
     if run_type == "workdir":

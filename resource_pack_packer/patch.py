@@ -41,7 +41,7 @@ class Patch:
 
 
 # Replaces and adds files accordingly
-def _patch_replace(pack, patch):
+def _patch_replace(pack, patch, logger: logging.Logger):
     patch_dir = parse_dir_keywords(patch.patch["directory"])
     patch_files = glob(path.join(patch_dir, "**"), recursive=True)
 
@@ -68,7 +68,7 @@ def _remove_block(file):
 
 
 # Removes all specified files
-def _patch_remove(pack, patch):
+def _patch_remove(pack, patch, logger: logging.Logger):
     files = []
     if "files" in patch.patch:
         files = patch.patch["files"]
@@ -92,7 +92,7 @@ def _patch_remove(pack, patch):
 
             _remove_block(path.join(pack, path.normpath(parsed_block_file)))
 
-        logging.info(f"Removed block [{i}/{len(blocks)}]: {block_name_plural}")
+        logger.info(f"Removed block [{i}/{len(blocks)}]: {block_name_plural}")
 
     for i, file in enumerate(files, start=1):
         file_abs = path.join(pack, file)
@@ -111,11 +111,11 @@ def _patch_remove(pack, patch):
 
 
 # Contains multiple patches
-def _patch_multi(pack, patch):
+def _patch_multi(pack, patch, logger_name: str):
     patches = patch.patch
 
     for patch_data in patches:
-        patch_pack(pack, Patch(patch_data, patch.name))
+        patch_pack(pack, Patch(patch_data, patch.name), logger_name)
 
 
 def _get_json_file(file_dir: str) -> dict:
@@ -222,7 +222,7 @@ class MixinFileSelector:
         self.arguments = arguments
         self.pack = pack
 
-    def run(self) -> Union[List[str], None]:
+    def run(self, logger: logging.Logger) -> Union[List[str], None]:
         if self.selector_type == MIXIN_FILE_SELECTOR_TYPE_FILE:
             return self.arguments["files"]
         elif self.selector_type == MIXIN_FILE_SELECTOR_TYPE_PATH:
@@ -245,7 +245,7 @@ class MixinFileSelector:
             else:
                 return files
         else:
-            logging.error(f"Incorrect file selector type: {self.selector_type}")
+            logger.error(f"Incorrect file selector type: {self.selector_type}")
             return
 
     @staticmethod
@@ -261,12 +261,12 @@ class MixinSelector:
         self.selector_type = selector_type
         self.arguments = arguments
 
-    def run(self, json_data) -> Union[list, None]:
+    def run(self, json_data, logger: logging.Logger) -> Union[list, None]:
         if self.selector_type == MIXIN_SELECTOR_TYPE_PATH:
             location = str(self.arguments["location"]).split("/")
             return location
         else:
-            logging.error(f"Incorrect selector type: {self.selector_type}")
+            logger.error(f"Incorrect selector type: {self.selector_type}")
 
     @staticmethod
     def parse(data: dict):
@@ -282,7 +282,7 @@ class MixinModifier:
         self.modifier_type = modifier_type
         self.arguments = arguments
 
-    def run(self, file_directory: str, file: dict, json_directory: list):
+    def run(self, file_directory: str, file: dict, json_directory: list, logger: logging.Logger):
         modified_file = file
 
         if self.modifier_type == MIXIN_MODIFIER_TYPE_SET:
@@ -298,7 +298,7 @@ class MixinModifier:
         elif self.modifier_type == MIXIN_MODIFIER_TYPE_REPLACE:
             modified_file = _replace_json(file, json_directory, self.arguments["select"], self.arguments["replacement"])
         else:
-            logging.error(f"Incorrect modifier type: {self.modifier_type}")
+            logger.error(f"Incorrect modifier type: {self.modifier_type}")
 
         _set_json_file(file_directory, modified_file)
 
@@ -317,24 +317,21 @@ class Mixin:
         self.modifiers = modifiers
         self.pack = pack
 
-    def run(self):
-        files = self.file_selector.run()
+    def run(self, logger):
+        files = self.file_selector.run(logger)
         for file in files:
-            self._run_file(file)
+            file_path = os.path.join(self.pack, file)
+            file_data = _get_json_file(file_path)
 
-    def _run_file(self, file):
-        file_path = os.path.join(self.pack, file)
-        file_data = _get_json_file(file_path)
+            # Checks if file exists
+            if file_data is None:
+                logger.error(f"File couldn't be found: {file_path}")
+                return
 
-        # Checks if file exists
-        if file_data is None:
-            logging.error(f"File couldn't be found: {file_path}")
-            return
+            json_directory = self.selector.run(file_data, logger)
 
-        json_directory = self.selector.run(file_data)
-
-        for modifier in self.modifiers:
-            modifier.run(file_path, file_data, json_directory)
+            for modifier in self.modifiers:
+                modifier.run(file_path, file_data, json_directory, logger)
 
     @staticmethod
     def parse(data: dict, pack: str):
@@ -344,13 +341,13 @@ class Mixin:
 
 
 # Allows json files to be edited
-def _patch_mixin_json(pack: str, patch: Patch):
+def _patch_mixin_json(pack: str, patch: Patch, logger: logging.Logger):
     mixins = patch.patch["mixins"]
 
     for i, data in enumerate(mixins, start=1):
         mixin = Mixin.parse(data, pack)
-        logging.info(f"Completed mixin [{i}/{len(mixins)}]")
-        mixin.run()
+        logger.info(f"Completed mixin [{i}/{len(mixins)}]")
+        mixin.run(logger)
 
 
 PATCH_TYPE_REPLACE = "replace"
@@ -359,14 +356,15 @@ PATCH_TYPE_MULTI = "multi"
 PATCH_TYPE_MIXIN_JSON = "mixin_json"
 
 
-def patch_pack(pack: str, patch: Patch):
+def patch_pack(pack: str, patch: Patch, logger_name: str):
+    logger = logging.getLogger(f"{logger_name}\x1b[0m/\x1b[34mPatching\x1b[0m")
     if patch.type == PATCH_TYPE_REPLACE:
-        _patch_replace(pack, patch)
+        _patch_replace(pack, patch, logger)
     elif patch.type == PATCH_TYPE_REMOVE:
-        _patch_remove(pack, patch)
+        _patch_remove(pack, patch, logger)
     elif patch.type == PATCH_TYPE_MULTI:
-        _patch_multi(pack, patch)
+        _patch_multi(pack, patch, logger_name)
     elif patch.type == PATCH_TYPE_MIXIN_JSON:
-        _patch_mixin_json(pack, patch)
+        _patch_mixin_json(pack, patch, logger)
     else:
-        logging.error(f"Incorrect patch type: {patch.type}")
+        logger.error(f"Incorrect patch type: {patch.type}")
