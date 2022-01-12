@@ -33,11 +33,54 @@ def get_patch_data(patch):
         return json.load(file)
 
 
+PATCH_TYPE_REPLACE = "replace"
+PATCH_TYPE_REMOVE = "remove"
+PATCH_TYPE_MULTI = "multi"
+PATCH_TYPE_MIXIN_JSON = "mixin_json"
+
+
 class Patch:
     def __init__(self, data, name):
         self.patch = data["patch"]
         self.type = data["type"]
         self.name = name
+
+    def run(self, pack: str, logger: logging.Logger):
+        if self.type == PATCH_TYPE_REPLACE:
+            _patch_replace(pack, self, logger)
+        elif self.type == PATCH_TYPE_REMOVE:
+            _patch_remove(pack, self, logger)
+        elif self.type == PATCH_TYPE_MIXIN_JSON:
+            _patch_mixin_json(pack, self, logger)
+        else:
+            logger.error(f"Incorrect patch type: {self.type}")
+
+
+class PatchFile:
+    def __init__(self, patches: List[Patch], name: str):
+        self.patches = patches
+        self.name = name
+
+    def run(self, pack: str, logger_name: str):
+        for i, patch in enumerate(self.patches, start=1):
+            logger = logging.getLogger(f"{logger_name}\x1b[0m/\x1b[34m{self.name}\x1b[0m")
+            patch.run(pack, logger)
+            logger.info(f"Completed patch [{i}/{len(self.patches)}]")
+
+    @staticmethod
+    def parse_file(directory: str, name: str, logger: logging.Logger):
+        if os.path.exists(directory):
+            with open(directory, "r") as file:
+                data = json.load(file)
+                if "patches" in data:
+                    patches = []
+                    for patch in data["patches"]:
+                        patches.append(Patch(patch, name))
+                    return PatchFile(patches, name)
+                else:
+                    logger.error(f"Failed to parse patch: {directory}")
+        else:
+            logger.error(f"Patch can't be found: {directory}")
 
 
 # Replaces and adds files accordingly
@@ -108,14 +151,6 @@ def _patch_remove(pack, patch, logger: logging.Logger):
                 logging.info(f"Removed folder [{i}/{len(files)}]: {file_abs}")
         else:
             logging.error(f"File couldn't be found: {file_abs}")
-
-
-# Contains multiple patches
-def _patch_multi(pack, patch, logger_name: str):
-    patches = patch.patch
-
-    for patch_data in patches:
-        patch_pack(pack, Patch(patch_data, patch.name), logger_name)
 
 
 def _get_json_file(file_dir: str) -> dict:
@@ -311,7 +346,8 @@ class MixinModifier:
 
 
 class Mixin:
-    def __init__(self, file_selector: MixinFileSelector, selector: MixinSelector, modifiers: List[MixinModifier], pack: str):
+    def __init__(self, file_selector: MixinFileSelector, selector: MixinSelector, modifiers: List[MixinModifier],
+                 pack: str):
         self.file_selector = file_selector
         self.selector = selector
         self.modifiers = modifiers
@@ -348,23 +384,3 @@ def _patch_mixin_json(pack: str, patch: Patch, logger: logging.Logger):
         mixin = Mixin.parse(data, pack)
         logger.info(f"Completed mixin [{i}/{len(mixins)}]")
         mixin.run(logger)
-
-
-PATCH_TYPE_REPLACE = "replace"
-PATCH_TYPE_REMOVE = "remove"
-PATCH_TYPE_MULTI = "multi"
-PATCH_TYPE_MIXIN_JSON = "mixin_json"
-
-
-def patch_pack(pack: str, patch: Patch, logger_name: str):
-    logger = logging.getLogger(f"{logger_name}\x1b[0m/\x1b[34mPatching\x1b[0m")
-    if patch.type == PATCH_TYPE_REPLACE:
-        _patch_replace(pack, patch, logger)
-    elif patch.type == PATCH_TYPE_REMOVE:
-        _patch_remove(pack, patch, logger)
-    elif patch.type == PATCH_TYPE_MULTI:
-        _patch_multi(pack, patch, logger_name)
-    elif patch.type == PATCH_TYPE_MIXIN_JSON:
-        _patch_mixin_json(pack, patch, logger)
-    else:
-        logger.error(f"Incorrect patch type: {patch.type}")

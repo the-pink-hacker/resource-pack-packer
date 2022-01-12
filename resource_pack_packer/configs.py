@@ -1,11 +1,13 @@
 import json
+import logging
+import os
 from glob import glob
 from os import path
 from typing import List
 
-from resource_pack_packer.settings import MAIN_SETTINGS
+from resource_pack_packer.settings import MAIN_SETTINGS, parse_dir_keywords
 from resource_pack_packer.curseforge import CHANGELOG_TYPE_MARKDOWN
-from resource_pack_packer.patch import get_patches, Patch
+from resource_pack_packer.patch import get_patches, Patch, PatchFile
 from resource_pack_packer.settings import parse_keyword
 
 
@@ -16,12 +18,20 @@ def parse_name_scheme_keywords(scheme, name, version, mc_version):
     return scheme
 
 
-def _get_config_file(pack):
+def _get_config_file(pack, logger: logging.Logger):
     files = glob(path.join(MAIN_SETTINGS.working_directory, "configs", "*"))
+
+    file_dir = None
 
     for file in files:
         if pack.lower() == path.splitext(path.basename(file))[0].replace("_", " ").lower():
-            return path.abspath(file)
+            file_dir = path.abspath(file)
+
+    if file_dir is not None:
+        return file_dir
+    else:
+        logger.error(f"Could not find config: {pack}")
+        raise FileNotFoundError(f"Could not find config: {pack}")
 
 
 def generate_pack_info(pack, pack_name, mc_version, delete_textures, ignore_folders, regenerate_meta, patches):
@@ -52,9 +62,11 @@ def check_option(root, option):
 
 
 class PackInfo:
-    def __init__(self, pack_name, data=None):
+    def __init__(self, pack_name: str, data: dict = None):
+        logger = logging.getLogger(pack_name)
+
         if data is None:
-            with open(_get_config_file(pack_name)) as file:
+            with open(_get_config_file(pack_name, logger)) as file:
                 data = json.load(file)
 
         self.directory = data["directory"]
@@ -67,7 +79,7 @@ class PackInfo:
         self.configs = []
 
         for config in data["configs"]:
-            self.configs.append(Config(data["configs"][config], config))
+            self.configs.append(Config(data["configs"][config], config, logger))
 
         self.curseforge_id = None
         self.curseforge_changelog_type = CHANGELOG_TYPE_MARKDOWN
@@ -80,7 +92,7 @@ class PackInfo:
 
 
 class Config:
-    def __init__(self, config, name):
+    def __init__(self, config: dict, name: str, logger: logging.Logger):
         self.name = name
         self.mc_version = config["mc_versions"][0]
         self.mc_versions = config["mc_versions"]
@@ -99,7 +111,8 @@ class Config:
         if check_option(config, "minify_json"):
             self.minify_json = config["minify_json"]
 
-        self.patches: List[Patch] = []
+        self.patches = []
 
         if check_option(config, "patches"):
-            self.patches = get_patches(config["patches"])
+            for patch in config["patches"]:
+                self.patches.append(PatchFile.parse_file(os.path.join(MAIN_SETTINGS.working_directory, MAIN_SETTINGS.patch_dir, f"{patch}.json"), patch, logger))

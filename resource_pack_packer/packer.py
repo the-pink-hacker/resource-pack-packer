@@ -14,7 +14,6 @@ import billiard.pool
 from resource_pack_packer import curseforge
 from resource_pack_packer.configs import PackInfo, generate_pack_info, parse_name_scheme_keywords
 from resource_pack_packer.curseforge import UploadFileRequest
-from resource_pack_packer.patch import patch_pack
 from resource_pack_packer.settings import MAIN_SETTINGS, parse_dir_keywords
 
 
@@ -281,9 +280,9 @@ class Packer:
         # Patch
         if len(config.patches) > 0:
             logger.info(f"Applying patches...")
-            for i, patch in enumerate(config.patches, start=1):
-                patch_pack(temp_pack_dir, patch, logger.name)
-                logger.info(f"Completed patch [{i}/{len(config.patches)}]: {patch.name}")
+
+            for patch in config.patches:
+                patch.run(temp_pack_dir, logger.name)
 
         # Delete Empty Folders
         if config.delete_empty_folders:
@@ -308,7 +307,7 @@ class Packer:
             if self.publish:
                 UploadFileRequest(self.pack_info, config, output, temp_pack_dir, pack_name, self.release_type).upload()
 
-    def _copy_pack(self, src, dest):
+    def _copy_pack(self, src: str, dest: str):
         files = glob(path.join(src, "**"), recursive=True)
 
         copy_threads = []
