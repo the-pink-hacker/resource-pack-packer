@@ -344,7 +344,7 @@ class Packer:
     def delete(self, directory, folder, ignore, logger: logging.Logger):
         namespaces = glob(path.join(directory, "assets", "*"))
 
-        for i, namespace in enumerate(namespaces):
+        for i, namespace in enumerate(namespaces, start=1):
             if path.exists(path.join(namespace, folder)):
                 folders = glob(path.join(namespace, folder, "*"))
 
