@@ -3,11 +3,11 @@ import logging
 import os
 from glob import glob
 from os import path
-from typing import List
+from typing import Union
 
-from resource_pack_packer.settings import MAIN_SETTINGS, parse_dir_keywords
 from resource_pack_packer.curseforge import CHANGELOG_TYPE_MARKDOWN
-from resource_pack_packer.patch import get_patches, Patch, PatchFile
+from resource_pack_packer.patch import PatchFile
+from resource_pack_packer.settings import MAIN_SETTINGS
 from resource_pack_packer.settings import parse_keyword
 
 
@@ -18,7 +18,7 @@ def parse_name_scheme_keywords(scheme, name, version, mc_version):
     return scheme
 
 
-def _get_config_file(pack, logger: logging.Logger):
+def _get_config_file(pack: str, logger: logging.Logger) -> str:
     files = glob(path.join(MAIN_SETTINGS.working_directory, "configs", "*"))
 
     file_dir = None
@@ -78,8 +78,14 @@ class PackInfo:
 
         self.configs = []
 
-        for config in data["configs"]:
-            self.configs.append(Config(data["configs"][config], config, logger))
+        if "configs" in data:
+            if len(data["configs"]) > 0:
+                for config in data["configs"]:
+                    self.configs.append(Config(data["configs"][config], config, logger))
+            else:
+                logger.error("No configs are detected")
+        else:
+            logger.error("Couldn't parse configs")
 
         self.curseforge_id = None
         self.curseforge_changelog_type = CHANGELOG_TYPE_MARKDOWN

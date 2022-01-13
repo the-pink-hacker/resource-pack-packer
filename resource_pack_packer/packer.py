@@ -191,9 +191,17 @@ class Packer:
 
         self.version = "DEV"
 
+        selected_config = None
+
         for config in self.pack_info.configs:
             if config.name == self.config:
-                self._pack(config)
+                selected_config = config
+
+        if selected_config is not None:
+            self._pack(selected_config)
+        else:
+            self.logger.error(f"Couldn't find config: {self.config}")
+            return
 
         self.logger.info(f"{self.pack_dir} - Time: {time() - start_time} Seconds")
 
