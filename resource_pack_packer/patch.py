@@ -7,7 +7,7 @@ import shutil
 from glob import glob
 from os import path
 
-from typing import List, Union
+from typing import List, Union, Tuple
 
 from resource_pack_packer.settings import MAIN_SETTINGS, parse_dir_keywords
 
@@ -411,6 +411,34 @@ def parse_minecraft_file(file_path: str, folder: str, extension: str):
     return os.path.join("assets", namespace, folder, f"{file_path}.{extension}")
 
 
+def get_cube_direction(from_pos: Tuple[int], to_pos: Tuple[int]) -> Union[str, None]:
+    """
+    Takes a cube's position and returns which side of a block it's on
+    :param from_pos: The cube's from position
+    :param to_pos: The cube's to position
+    :return: The direction as a string. If no direction is found, then it will be None
+    """
+    if from_pos == [0, 0, 0] and to_pos == [16, 16, 16]:
+        return "center"
+    if from_pos[0] >= 0 and to_pos[0] <= 16 and from_pos[2] >= 0 and to_pos[2] <= 16:
+        if from_pos[1] <= 0:
+            return "down"
+        elif from_pos[1] >= 16:
+            return "up"
+    elif from_pos[0] >= 0 and to_pos[0] <= 16 and from_pos[1] >= 0 and to_pos[1] <= 16:
+        if from_pos[2] <= 0:
+            return "north"
+        elif from_pos[2] >= 16:
+            return "south"
+    elif from_pos[2] >= 0 and to_pos[2] <= 16 and from_pos[1] >= 0 and to_pos[1] <= 16:
+        if from_pos[0] <= 0:
+            return "west"
+        elif from_pos[0] >= 16:
+            return "east"
+
+    return None
+
+
 MODIFIER_TYPE_MODEL_MARGIN = "model_margin"
 
 
@@ -431,13 +459,22 @@ def _patch_modifier(pack: str, patch: Patch, logger: logging.Logger):
                     for element in model_data["elements"]:
                         position_from = element["from"]
                         position_to = element["to"]
-                        # Check if main cube
-                        if position_from != [0, 0, 0] and position_to != [16, 16, 16]:
-                            calculated_random_offset = random.uniform(0, random_offset)
-                            for i, number in enumerate(position_from):
-                                position_from[i] = number + offset + calculated_random_offset
-                            for i, number in enumerate(position_to):
-                                position_to[i] = number + offset + calculated_random_offset
+                        direction = get_cube_direction(position_from, position_to)
+                        # Check if not main cube
+                        if direction != "center":
+                            calculated_offset = random.uniform(0, random_offset) + offset
+                            if direction == "north":
+                                position_from[2] -= calculated_offset
+                            elif direction == "east":
+                                position_to[0] += calculated_offset
+                            elif direction == "south":
+                                position_to[2] += calculated_offset
+                            elif direction == "west":
+                                position_from[0] -= calculated_offset
+                            elif direction == "up":
+                                position_to[1] += calculated_offset
+                            elif direction == "down":
+                                position_from[1] -= calculated_offset
                             element["from"] = position_from
                             element["to"] = position_to
                         new_elements.append(element)
