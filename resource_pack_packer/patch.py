@@ -448,6 +448,14 @@ def _patch_modifier(pack: str, patch: Patch, logger: logging.Logger):
         models = patch.patch["arguments"]["models"]
         offset = patch.patch["arguments"]["offset"]
         random_offset = patch.patch["arguments"]["random_offset"]
+
+        if "seed" in patch.patch["arguments"]:
+            seed = patch.patch["arguments"]["seed"]
+        else:
+            seed = 0
+
+        random.seed(seed)
+
         for model in models:
             file_path = os.path.join(pack, parse_minecraft_file(model, "models", "json"))
             if os.path.exists(file_path):
