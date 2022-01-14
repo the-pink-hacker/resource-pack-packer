@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import random
 import re
 import shutil
 from glob import glob
@@ -37,6 +38,7 @@ PATCH_TYPE_REPLACE = "replace"
 PATCH_TYPE_REMOVE = "remove"
 PATCH_TYPE_MULTI = "multi"
 PATCH_TYPE_MIXIN_JSON = "mixin_json"
+PATCH_TYPE_MODIFIER = "modifier"
 
 
 class Patch:
@@ -52,6 +54,8 @@ class Patch:
             _patch_remove(pack, self, logger)
         elif self.type == PATCH_TYPE_MIXIN_JSON:
             _patch_mixin_json(pack, self, logger)
+        elif self.type == PATCH_TYPE_MODIFIER:
+            _patch_modifier(pack, self, logger)
         else:
             logger.error(f"Incorrect patch type: {self.type}")
 
@@ -384,3 +388,63 @@ def _patch_mixin_json(pack: str, patch: Patch, logger: logging.Logger):
         mixin = Mixin.parse(data, pack)
         logger.info(f"Completed mixin [{i}/{len(mixins)}]")
         mixin.run(logger)
+
+
+def parse_minecraft_file(file_path: str, folder: str, extension: str):
+    """
+    Parses a minecraft file path. Example:
+    minecraft:block/sandstone -> assets/minecraft/models/block/sandstone.json
+    :param file_path: A Minecraft file path
+    :param folder: The path from the namespace
+    :param extension: The file extension
+    :return: Relative path from resource pack
+    """
+    file_path = os.path.normpath(file_path)
+    namespace_regex = re.compile("^[a-z]*(?=:)")
+    namespace_match = re.match(namespace_regex, file_path)
+    if namespace_match is not None:
+        span = namespace_match.span()
+        namespace = file_path[span[0]:span[1]]
+        file_path = file_path.replace(f"{namespace}:", "")
+    else:
+        namespace = "minecraft"
+    return os.path.join("assets", namespace, folder, f"{file_path}.{extension}")
+
+
+MODIFIER_TYPE_MODEL_MARGIN = "model_margin"
+
+
+def _patch_modifier(pack: str, patch: Patch, logger: logging.Logger):
+    type = patch.patch["type"]
+    if type == MODIFIER_TYPE_MODEL_MARGIN:
+        models = patch.patch["arguments"]["models"]
+        offset = patch.patch["arguments"]["offset"]
+        random_offset = patch.patch["arguments"]["random_offset"]
+        for model in models:
+            file_path = os.path.join(pack, parse_minecraft_file(model, "models", "json"))
+            if os.path.exists(file_path):
+                with open(file_path, "r") as file:
+                    model_data = json.load(file)
+                # Check if model contains elements
+                if "elements" in model_data and len(model_data["elements"]) > 0:
+                    new_elements = []
+                    for element in model_data["elements"]:
+                        position_from = element["from"]
+                        position_to = element["to"]
+                        calculated_random_offset = random.uniform(0, random_offset)
+                        for i, number in enumerate(position_from):
+                            position_from[i] = number + offset + calculated_random_offset
+                        for i, number in enumerate(position_to):
+                            position_to[i] = number + offset + calculated_random_offset
+                        element["from"] = position_from
+                        element["to"] = position_to
+                        new_elements.append(element)
+                    model_data["elements"] = new_elements
+                    with open(file_path, "w") as file:
+                        json.dump(model_data, file)
+                else:
+                    logger.error(f"file lacks elements: {model}")
+            else:
+                logger.error(f"File couldn't be found: {model}")
+    else:
+        logger.error(f"Incorrect modifier type: {type}")
