@@ -431,17 +431,19 @@ def _patch_modifier(pack: str, patch: Patch, logger: logging.Logger):
                     for element in model_data["elements"]:
                         position_from = element["from"]
                         position_to = element["to"]
-                        calculated_random_offset = random.uniform(0, random_offset)
-                        for i, number in enumerate(position_from):
-                            position_from[i] = number + offset + calculated_random_offset
-                        for i, number in enumerate(position_to):
-                            position_to[i] = number + offset + calculated_random_offset
-                        element["from"] = position_from
-                        element["to"] = position_to
+                        # Check if main cube
+                        if position_from != [0, 0, 0] and position_to != [16, 16, 16]:
+                            calculated_random_offset = random.uniform(0, random_offset)
+                            for i, number in enumerate(position_from):
+                                position_from[i] = number + offset + calculated_random_offset
+                            for i, number in enumerate(position_to):
+                                position_to[i] = number + offset + calculated_random_offset
+                            element["from"] = position_from
+                            element["to"] = position_to
                         new_elements.append(element)
                     model_data["elements"] = new_elements
                     with open(file_path, "w") as file:
-                        json.dump(model_data, file)
+                        json.dump(model_data, file, indent="\t")
                 else:
                     logger.error(f"file lacks elements: {model}")
             else:
