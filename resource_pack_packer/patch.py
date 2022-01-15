@@ -181,7 +181,7 @@ def _set_json(root: Union[list, dict], location: list, data, merge: bool, add: b
         else:
             if location[0] in root:
                 root[location[0]] = _set_json(root[location[0]], location[1:], data, merge, add)
-            elif bool:
+            elif add:
                 # If the location does not exist, then it won't attempt a merge (faster).
                 new_json = data
 
