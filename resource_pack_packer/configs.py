@@ -3,7 +3,7 @@ import logging
 import os
 from glob import glob
 from os import path
-from typing import Union
+from typing import Union, List
 
 from resource_pack_packer.curseforge import CHANGELOG_TYPE_MARKDOWN
 from resource_pack_packer.patch import PatchFile
@@ -62,12 +62,8 @@ def check_option(root, option):
 
 
 class PackInfo:
-    def __init__(self, pack_name: str, data: dict = None):
+    def __init__(self, pack_name: str, data: dict):
         logger = logging.getLogger(pack_name)
-
-        if data is None:
-            with open(_get_config_file(pack_name, logger)) as file:
-                data = json.load(file)
 
         self.directory = data["directory"]
         self.name_scheme = data["name_scheme"]
@@ -87,6 +83,8 @@ class PackInfo:
         else:
             logger.error("Couldn't parse configs")
 
+        self.run_options = RunOptions.parse(data["run_options"])
+
         self.curseforge_id = None
         self.curseforge_changelog_type = CHANGELOG_TYPE_MARKDOWN
 
@@ -95,6 +93,24 @@ class PackInfo:
 
             if check_option(data["curseforge"], "changelog_type"):
                 self.curseforge_id = data["curseforge"]["changelog_type"]
+
+    def get_run_option(self, name: str) -> Union["RunOptions", None]:
+        for run_option in self.run_options:
+            if run_option.name == name:
+                return run_option
+        return None
+
+    @staticmethod
+    def parse(pack_name: str) -> Union["PackInfo", None]:
+        logger = logging.getLogger(pack_name)
+        file_directory = path.join(MAIN_SETTINGS.working_directory, "configs", f"{pack_name}.json")
+        if os.path.exists(file_directory):
+            with open(file_directory, "r") as file:
+                data = json.load(file)
+            return PackInfo(pack_name, data)
+        else:
+            logger.error(f"Couldn't find pack: {pack_name}")
+            return None
 
 
 class Config:
@@ -121,4 +137,84 @@ class Config:
 
         if check_option(config, "patches"):
             for patch in config["patches"]:
-                self.patches.append(PatchFile.parse_file(os.path.join(MAIN_SETTINGS.working_directory, MAIN_SETTINGS.patch_dir, f"{patch}.json"), patch, logger))
+                self.patches.append(PatchFile.parse_file(
+                    os.path.join(MAIN_SETTINGS.working_directory, MAIN_SETTINGS.patch_dir, f"{patch}.json"), patch,
+                    logger))
+
+
+class RunOptions:
+    def __init__(self, name: str, configs: Union[List[str], str], minify_json: bool, delete_empty_folders: bool,
+                 zip_pack: bool, out_dir: str, version: Union[str, None], publish: bool, rerun: bool):
+        self.name = name
+        self.configs = configs
+        self.minify_json = minify_json
+        self.delete_empty_folders = delete_empty_folders
+        self.zip_pack = zip_pack
+        self.out_dir = out_dir
+        self.version = version
+        self.publish = publish
+        self.rerun = rerun
+
+    def get_configs(self, configs: List[Config], logger: logging.Logger) -> Union[
+                    List[Config], None]:
+        selected_configs = []
+
+        # All configs
+        if self.configs == "*":
+            selected_configs = configs
+        # Select config
+        elif self.configs == "?":
+            config_list = ""
+            for config in configs:
+                config_list += f"- {config.name}\n"
+            name = input(f"Select Config:\n{config_list}\n")
+            for config in configs:
+                if config.name == name:
+                    selected_configs.append(config)
+        # List of configs
+        elif isinstance(self.configs, list) and len(self.configs) > 0:
+            for name in self.configs:
+                for config in configs:
+                    if config.name == name:
+                        selected_configs.append(config)
+        else:
+            logger.warning(f"couldn't find config(s): {self.configs}")
+            return None
+        return selected_configs
+
+    @staticmethod
+    def parse(data: dict) -> List["RunOptions"]:
+        run_options = []
+        for key, value in data.items():
+            if "out_dir" in value:
+                out_dir = value["out_dir"]
+            else:
+                out_dir = MAIN_SETTINGS.out_dir
+
+            if "version" in value:
+                version = value["version"]
+            else:
+                version = None
+
+            if "publish" in value:
+                publish = value["publish"]
+            else:
+                publish = False
+
+            if "rerun" in value:
+                rerun = value["rerun"]
+            else:
+                rerun = False
+
+            run_options.append(RunOptions(
+                key,
+                value["configs"],
+                value["minify_json"],
+                value["delete_empty_folders"],
+                value["zip_pack"],
+                out_dir,
+                version,
+                publish,
+                rerun
+            ))
+        return run_options

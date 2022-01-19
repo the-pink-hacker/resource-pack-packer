@@ -15,14 +15,14 @@ def main():
 
     logger.info(f"Working Dir: {MAIN_SETTINGS.working_directory}")
 
-    run_type = input("config\ndev\nmanual\npublish\nworkdir\n\n").lower()
+    run_type = input("run\nworkdir\n\n").lower()
     if run_type == "workdir":
         working_directory = input("Working Directory: ")
         MAIN_SETTINGS.working_directory = working_directory
         MAIN_SETTINGS.save()
         main()
     else:
-        packer = Packer(run_type)
+        packer = Packer()
         packer.start()
 
 

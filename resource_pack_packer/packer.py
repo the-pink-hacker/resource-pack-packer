@@ -4,15 +4,13 @@ import os
 import shutil
 import zipfile
 from glob import glob
+from multiprocessing import pool
 from os import path
 from threading import Thread
-from time import time
+from timeit import default_timer
 from typing import Union
 
-import billiard.pool
-
-from resource_pack_packer import curseforge
-from resource_pack_packer.configs import PackInfo, generate_pack_info, parse_name_scheme_keywords
+from resource_pack_packer.configs import PackInfo, parse_name_scheme_keywords, Config
 from resource_pack_packer.curseforge import UploadFileRequest
 from resource_pack_packer.settings import MAIN_SETTINGS, parse_dir_keywords
 
@@ -46,24 +44,6 @@ def auto_pack(version):
     return 0
 
 
-def filter_selection(packs, selected):
-    """Finds the correct pack from a dir"""
-    # Checks for match
-    for pack in packs:
-        if selected is path.basename(pack):
-            return pack
-    # Checks for close match
-    for pack in packs:
-        if selected in pack:
-            return pack
-    # Checks for close match
-    for pack in packs:
-        if selected.lower() in pack.lower():
-            return pack
-    logging.warning(f"Could not find: {selected}")
-    return None
-
-
 def zip_dir(src, dest):
     if not path.exists(path.dirname(dest)):
         os.makedirs(path.dirname(dest))
@@ -90,8 +70,7 @@ def minify_json(directory):
 
 
 class Packer:
-    def __init__(self, run_type, pack=None, parent=None):
-        self.RUN_TYPE = run_type
+    def __init__(self, pack=None, parent=None):
         self.PACK_FOLDER_DIR = MAIN_SETTINGS.pack_folder
         self.TEMP_DIR = parse_dir_keywords(os.path.join(MAIN_SETTINGS.working_directory, MAIN_SETTINGS.temp_dir))
         self.OUT_DIR = parse_dir_keywords(os.path.join(MAIN_SETTINGS.working_directory, MAIN_SETTINGS.out_dir))
@@ -105,162 +84,59 @@ class Packer:
         else:
             self.pack = None
 
-        self.publish = self.RUN_TYPE == RUN_TYPE_PUBLISH
-
-        self.dev = self.RUN_TYPE == RUN_TYPE_DEV
-
         self.logger = logging.getLogger("Packing")
 
     def start(self):
-        if self.RUN_TYPE.lower() == RUN_TYPE_CONFIG:
-            self._pack_configs()
-        elif self.RUN_TYPE.lower() == RUN_TYPE_DEV:
-            self._pack_dev()
-        elif self.RUN_TYPE.lower() == RUN_TYPE_MANUAL:
-            self._pack_manual()
-        elif self.RUN_TYPE.lower() == RUN_TYPE_PUBLISH:
-            self._pack_configs()
+        # Pack info
+        config_files = glob(path.join(MAIN_SETTINGS.working_directory, "configs", "*"))
+        config_files_string = ""
+        for config in config_files:
+            config_files_string += f"- {os.path.basename(config.split('.')[0])}\n"
 
-    def _pack_configs(self):
-        """Automatically packs a resource pack with the config file"""
-        if self.publish:
-            if input("Publish to www.curseforge.com? Y/N\n").lower() != "y":
-                publish = False
-                self.logger.info("Request canceled.")
-            else:
-                input("Hit 'ENTER' to continue and publish to curseforge...")
+        selected_pack_name = input(f"Choose pack:\n{config_files_string}\n")
 
-        self.pack = input("Pack Name: ")
-
-        self.pack_info = PackInfo(self.pack)
-
+        self.pack_info = PackInfo.parse(selected_pack_name)
         self.pack_dir = parse_dir_keywords(self.pack_info.directory)
-
         self.logger = logging.getLogger(os.path.basename(self.pack_dir))
-
         self.logger.info(f"Located Pack: {self.pack_dir}")
 
-        self.version = input("Resource Pack Version: ")
+        # Run options
+        run_options_string = ""
+        for run_option in self.pack_info.run_options:
+            run_options_string += f"- {run_option.name}\n"
+        selected_run_option = input(f"Choose run option:\n{run_options_string}\n")
 
-        if self.publish:
-            self.release_type = input("Release Type ('alpha', 'beta', 'release'): ")
+        self.run_option = self.pack_info.get_run_option(selected_run_option)
 
-        self.clear_temp()
-        self.clear_out()
-
-        start_time = time()
-
-        if self.publish:
-            curseforge.init()
-
-        with billiard.pool.Pool(processes=os.cpu_count()) as p:
-            p.map(self._pack, self.pack_info.configs)
-
-        self.logger.info(f"Time: {time() - start_time} Seconds")
-
-    def _pack_dev(self, rerun=False):
-        """Outputs a single config into your resource pack folder for development purposes"""
-        if not rerun:
-            if not self.PACK_OVERRIDE:
-                self.pack = input("Pack Name: ")
-
-        self.pack_info = PackInfo(self.pack)
-
-        self.pack_dir = parse_dir_keywords(self.pack_info.directory)
-
-        self.logger = logging.getLogger(os.path.basename(self.pack_dir))
-
-        self.logger.info(f"Located Pack: {self.pack_dir}")
-
-        if not rerun:
-            if not self.PACK_OVERRIDE:
-                self.config = input("Config: ")
-            else:
-                self.config = self.parent.config
-
-        # Checks for dependencies and builds them
-        if len(self.pack_info.dependencies) > 0:
-            self.logger.info(f"Packing {self.pack}'s dependencies...")
-
-            with billiard.pool.Pool(processes=os.cpu_count()) as p:
-                p.map(self._pack_dependencies, self.pack_info.dependencies)
-
-        self.clear_out()
-
-        start_time = time()
-
-        self.version = "DEV"
-
-        selected_config = None
-
-        for config in self.pack_info.configs:
-            if config.name == self.config:
-                selected_config = config
-
-        if selected_config is not None:
-            self._pack(selected_config)
+        if self.run_option.version is not None:
+            self.version = self.run_option.version
         else:
-            self.logger.error(f"Couldn't find config: {self.config}")
-            return
+            self.version = input("Resource pack version: ")
 
-        self.logger.info(f"{self.pack_dir} - Time: {time() - start_time} Seconds")
+        # Config
+        self.configs = self.run_option.get_configs(self.pack_info.configs, self.logger)
 
-        if not self.PACK_OVERRIDE:
-            input("Hit enter to rerun")
-            self._pack_dev(True)
+        # Pack
+        start_time = default_timer()
 
-    def _pack_manual(self):
-        """Manually input the option to pack a resource pack"""
-        self.pack = input("Pack Name: ")
+        if len(self.configs) > 1:
+            with pool.Pool(processes=os.cpu_count()) as p:
+                p.map(self._pack, self.configs)
+        else:
+            self._pack(self.configs[0])
 
-        self.pack_dir = filter_selection(glob(path.join(self.PACK_FOLDER_DIR, "*")), self.pack)
+        self.logger.info(f"Time: {default_timer() - start_time} Seconds")
 
-        self.logger = logging.getLogger(os.path.basename(self.pack_dir))
-
-        self.logger.info(f"Located Pack: {self.pack_dir}")
-
-        self.version = input("Resource Pack Version: ")
-        mc_version = input("Minecraft Version: ")
-        delete_textures = input("Delete Textures? y/n: ").lower() == "y"
-
-        ignore_folders = []
-
-        if delete_textures:
-            ignore_folders = input("\tIgnore Folders (use comma and space to separate): ").split(", ")
-
-        regenerate_meta = input("Regenerate Meta? (pack format) y/n: ").lower() == "y"
-
-        patches = []
-
-        if input("Apply patches? y/n: ").lower() == "y":
-            patches = input("\tPatches (use comma and space to separate): ").split(", ")
-
-        self.clear_temp()
-        self.clear_out()
-
-        start_time = time()
-
-        self.pack_info = generate_pack_info(self.pack, path.basename(self.pack_dir), mc_version, delete_textures,
-                                            ignore_folders, regenerate_meta, patches)
-
-        self._pack(self.pack_info.configs[0])
-
-        self.logger.info(f"Time: {time() - start_time} Seconds")
-
-    def _pack_dependencies(self, pack):
-        self.logger.info(f"Packing {pack}")
-        packer = Packer(RUN_TYPE_DEV, pack.replace("_", " "), self)
-        packer.start()
-
-    def _pack(self, config):
+    def _pack(self, config: Config):
         pack_name = parse_name_scheme_keywords(self.pack_info.name_scheme, path.basename(self.pack_dir), self.version,
                                                config.mc_version)
         logger = logging.getLogger(f"{os.path.basename(self.pack_dir)}\x1b[0m/\x1b[34m{config.name}\x1b[0m")
 
         temp_pack_dir = path.join(self.TEMP_DIR, pack_name)
 
-        if self.dev:
-            temp_pack_dir = path.join(self.PACK_FOLDER_DIR, pack_name)
+        # Overrides output
+        if self.run_option.out_dir != MAIN_SETTINGS.out_dir:
+            temp_pack_dir = path.join(parse_dir_keywords(self.run_option.out_dir), pack_name)
             self.clear_temp(temp_pack_dir)
 
         # Copy Files
@@ -275,13 +151,13 @@ class Packer:
         # Regenerate Meta
         if config.regenerate_meta:
             logger.info("Regenerating meta...")
-            if config.minify_json and not self.dev:
+            if config.minify_json and self.run_option.minify_json:
                 self.regenerate_meta(temp_pack_dir, config.mc_version, logger, indent=None)
             else:
                 self.regenerate_meta(temp_pack_dir, config.mc_version, logger)
 
         # Minify Json
-        if config.minify_json and not self.dev:
+        if config.minify_json and self.run_option.minify_json:
             logger.info("Minifying json files...")
             self.minify_json_files(temp_pack_dir)
 
@@ -302,18 +178,23 @@ class Packer:
                         os.remove(directory)
 
         # Zip
-        if not self.dev:
-            if self.publish:
+        if self.run_option.zip_pack:
+            if self.run_option.publish:
                 output = temp_pack_dir + ".zip"
             else:
-                output = path.normpath(path.join(self.OUT_DIR, path.basename(temp_pack_dir) + ".zip"))
+                output = path.normpath(path.join(self.OUT_DIR, pack_name + ".zip"))
 
             zip_dir(temp_pack_dir, output)
             logger.info(f"Completed pack: {output}")
 
             # Publish to CurseForge
-            if self.publish:
-                UploadFileRequest(self.pack_info, config, output, temp_pack_dir, pack_name, self.release_type).upload()
+            if self.run_option.publish:
+                UploadFileRequest(self.pack_info, config, output, temp_pack_dir, pack_name, "release").upload()
+
+        # Rerun
+        if self.run_option.rerun:
+            input("\nPress enter to rerun...")
+            self._pack(config)
 
     def _copy_pack(self, src: str, dest: str):
         files = glob(path.join(src, "**"), recursive=True)
