@@ -1,7 +1,8 @@
 import logging
+import os
 
 from resource_pack_packer.packer import Packer
-from resource_pack_packer.settings import MAIN_SETTINGS
+from resource_pack_packer.settings import MAIN_SETTINGS, folder_dialog
 
 
 def main():
@@ -17,8 +18,7 @@ def main():
 
     run_type = input("run\nworkdir\n\n").lower()
     if run_type == "workdir":
-        working_directory = input("Working Directory: ")
-        MAIN_SETTINGS.working_directory = working_directory
+        MAIN_SETTINGS.working_directory = folder_dialog("Select Working Directory: ", os.path.abspath(os.path.join(MAIN_SETTINGS.working_directory, os.pardir)))
         MAIN_SETTINGS.save()
         main()
     else:
