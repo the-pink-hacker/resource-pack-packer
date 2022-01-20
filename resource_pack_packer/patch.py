@@ -49,16 +49,17 @@ class Patch:
         self.name = name
 
     def run(self, pack: str, logger: logging.Logger):
-        if self.type == PatchType.replace:
-            _patch_replace(pack, self, logger)
-        elif self.type == PatchType.remove:
-            _patch_remove(pack, self, logger)
-        elif self.type == PatchType.mixin_json:
-            _patch_mixin_json(pack, self, logger)
-        elif self.type == PatchType.modifier:
-            _patch_modifier(pack, self, logger)
-        else:
-            logger.error(f"Incorrect patch type: {self.type}")
+        match self.type:
+            case PatchType.replace:
+                _patch_replace(pack, self, logger)
+            case PatchType.remove:
+                _patch_remove(pack, self, logger)
+            case PatchType.mixin_json:
+                _patch_mixin_json(pack, self, logger)
+            case PatchType.modifier:
+                _patch_modifier(pack, self, logger)
+            case _:
+                logger.error(f"Incorrect patch type: {self.type}")
 
 
 class PatchFile:
@@ -264,30 +265,31 @@ class MixinFileSelector:
         self.pack = pack
 
     def run(self, logger: logging.Logger) -> Union[List[str], None]:
-        if self.selector_type == MixinFileSelectorType.file:
-            return self.arguments["files"]
-        elif self.selector_type == MixinFileSelectorType.path:
-            file_path = self.arguments["path"]
+        match self.selector_type:
+            case MixinFileSelectorType.file:
+                return self.arguments["files"]
+            case MixinFileSelectorType.path:
+                file_path = self.arguments["path"]
 
-            recursive = False
-            if "recursive" in self.arguments:
-                recursive = self.arguments["recursive"]
+                recursive = False
+                if "recursive" in self.arguments:
+                    recursive = self.arguments["recursive"]
 
-            files = glob(os.path.join(self.pack, file_path, "*"), recursive=recursive)
+                files = glob(os.path.join(self.pack, file_path, "*"), recursive=recursive)
 
-            if "regex" in self.arguments:
-                regex = re.compile(self.arguments["regex"])
+                if "regex" in self.arguments:
+                    regex = re.compile(self.arguments["regex"])
 
-                sorted_files = []
-                for file in files:
-                    if regex.match(os.path.relpath(file, os.path.join(self.pack, file_path))) is not None:
-                        sorted_files.append(os.path.relpath(file, self.pack))
-                return sorted_files
-            else:
-                return files
-        else:
-            logger.error(f"Incorrect file selector type: {self.selector_type}")
-            return
+                    sorted_files = []
+                    for file in files:
+                        if regex.match(os.path.relpath(file, os.path.join(self.pack, file_path))) is not None:
+                            sorted_files.append(os.path.relpath(file, self.pack))
+                    return sorted_files
+                else:
+                    return files
+            case _:
+                logger.error(f"Incorrect file selector type: {self.selector_type}")
+                return
 
     @staticmethod
     def parse(data: dict, pack):
@@ -328,20 +330,21 @@ class MixinModifier:
     def run(self, file_directory: str, file: dict, json_directory: list, logger: logging.Logger):
         modified_file = file
 
-        if self.modifier_type == MixinModifierType.set:
-            merge = False
-            if "merge" in self.arguments:
-                merge = self.arguments["merge"]
+        match self.modifier_type:
+            case MixinModifierType.set:
+                merge = False
+                if "merge" in self.arguments:
+                    merge = self.arguments["merge"]
 
-            add = True
-            if "add" in self.arguments:
-                merge = self.arguments["add"]
+                add = True
+                if "add" in self.arguments:
+                    merge = self.arguments["add"]
 
-            modified_file = _set_json(file, json_directory, self.arguments["data"], merge, add)
-        elif self.modifier_type == MixinModifierType.replace:
-            modified_file = _replace_json(file, json_directory, self.arguments["select"], self.arguments["replacement"])
-        else:
-            logger.error(f"Incorrect modifier type: {self.modifier_type}")
+                modified_file = _set_json(file, json_directory, self.arguments["data"], merge, add)
+            case MixinModifierType.replace:
+                modified_file = _replace_json(file, json_directory, self.arguments["select"], self.arguments["replacement"])
+            case _:
+                logger.error(f"Incorrect modifier type: {self.modifier_type}")
 
         _set_json_file(file_directory, modified_file)
 
