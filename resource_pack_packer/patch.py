@@ -36,10 +36,10 @@ def get_patch_data(patch):
 
 
 class PatchType(Enum):
-    replace = "replace"
-    remove = "remove"
-    mixin_json = "mixin_json"
-    modifier = "modifier"
+    REPLACE = "replace"
+    REMOVE = "remove"
+    MIXIN_JSON = "mixin_json"
+    MODIFIER = "modifier"
 
 
 class Patch:
@@ -50,13 +50,13 @@ class Patch:
 
     def run(self, pack: str, logger: logging.Logger):
         match self.type:
-            case PatchType.replace:
+            case PatchType.REPLACE.value:
                 _patch_replace(pack, self, logger)
-            case PatchType.remove:
+            case PatchType.REMOVE.value:
                 _patch_remove(pack, self, logger)
-            case PatchType.mixin_json:
+            case PatchType.MIXIN_JSON.value:
                 _patch_mixin_json(pack, self, logger)
-            case PatchType.modifier:
+            case PatchType.MODIFIER.value:
                 _patch_modifier(pack, self, logger)
             case _:
                 logger.error(f"Incorrect patch type: {self.type}")
@@ -136,8 +136,8 @@ def _patch_remove(pack, patch, logger: logging.Logger):
             block_name = block_name_plural
 
         for block_file in patch.patch["block_files"]:
-            parsed_block_file = block_file.replace("[block_name]", block_name)
-            parsed_block_file = parsed_block_file.replace("[block_name_plural]", block_name_plural)
+            parsed_block_file = block_file.REPLACE("[block_name]", block_name)
+            parsed_block_file = parsed_block_file.REPLACE("[block_name_plural]", block_name_plural)
 
             _remove_block(path.join(pack, path.normpath(parsed_block_file)))
 
@@ -254,8 +254,8 @@ def _check_json_node(root: dict, location: list) -> bool:
 
 
 class MixinFileSelectorType(Enum):
-    file = "file"
-    path = "path"
+    FILE = "file"
+    PATH = "path"
 
 
 class MixinFileSelector:
@@ -266,9 +266,9 @@ class MixinFileSelector:
 
     def run(self, logger: logging.Logger) -> Union[List[str], None]:
         match self.selector_type:
-            case MixinFileSelectorType.file:
+            case MixinFileSelectorType.FILE.value:
                 return self.arguments["files"]
-            case MixinFileSelectorType.path:
+            case MixinFileSelectorType.PATH.value:
                 file_path = self.arguments["path"]
 
                 recursive = False
@@ -297,7 +297,7 @@ class MixinFileSelector:
 
 
 class MixinSelectorType(Enum):
-    path = "path"
+    PATH = "path"
 
 
 class MixinSelector:
@@ -306,7 +306,7 @@ class MixinSelector:
         self.arguments = arguments
 
     def run(self, json_data, logger: logging.Logger) -> Union[list, None]:
-        if self.selector_type == MixinSelectorType.path:
+        if self.selector_type == MixinSelectorType.PATH.value:
             location = str(self.arguments["location"]).split("/")
             return location
         else:
@@ -318,8 +318,8 @@ class MixinSelector:
 
 
 class MixinModifierType(Enum):
-    set = "set"
-    replace = "replace"
+    SET = "set"
+    REPLACE = "replace"
 
 
 class MixinModifier:
@@ -331,7 +331,7 @@ class MixinModifier:
         modified_file = file
 
         match self.modifier_type:
-            case MixinModifierType.set:
+            case MixinModifierType.SET.value:
                 merge = False
                 if "merge" in self.arguments:
                     merge = self.arguments["merge"]
@@ -341,7 +341,7 @@ class MixinModifier:
                     merge = self.arguments["add"]
 
                 modified_file = _set_json(file, json_directory, self.arguments["data"], merge, add)
-            case MixinModifierType.replace:
+            case MixinModifierType.REPLACE.value:
                 modified_file = _replace_json(file, json_directory, self.arguments["select"], self.arguments["replacement"])
             case _:
                 logger.error(f"Incorrect modifier type: {self.modifier_type}")
@@ -447,12 +447,12 @@ def get_cube_direction(from_pos: Tuple[int], to_pos: Tuple[int]) -> Union[str, N
 
 
 class ModifierType(Enum):
-    model_margin = "model_margin"
+    MODEL_MARGIN = "model_margin"
 
 
 def _patch_modifier(pack: str, patch: Patch, logger: logging.Logger):
     type = patch.patch["type"]
-    if type == ModifierType.model_margin:
+    if type == ModifierType.MODEL_MARGIN.value:
         models = patch.patch["arguments"]["models"]
         offset = patch.patch["arguments"]["offset"]
         random_offset = patch.patch["arguments"]["random_offset"]
