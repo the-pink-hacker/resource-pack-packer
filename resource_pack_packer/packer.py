@@ -71,6 +71,7 @@ def minify_json(directory):
 
 class Packer:
     def __init__(self, pack=None, parent=None):
+        self.configs: Union[str, None] = None
         self.PACK_FOLDER_DIR = MAIN_SETTINGS.pack_folder
         self.TEMP_DIR = parse_dir_keywords(os.path.join(MAIN_SETTINGS.working_directory, MAIN_SETTINGS.temp_dir))
         self.OUT_DIR = parse_dir_keywords(os.path.join(MAIN_SETTINGS.working_directory, MAIN_SETTINGS.out_dir))
@@ -86,14 +87,17 @@ class Packer:
 
         self.logger = logging.getLogger("Packing")
 
-    def start(self):
+    def start(self, pack_overide: Union[str, None] = None, run_option_overide: Union[str, None] = None):
         # Pack info
         config_files = glob(path.join(MAIN_SETTINGS.working_directory, "configs", "*"))
         config_files_string = ""
         for config in config_files:
             config_files_string += f"- {os.path.basename(config.split('.')[0])}\n"
 
-        selected_pack_name = input(f"Choose pack:\n{config_files_string}\n")
+        if pack_overide is None:
+            selected_pack_name = input(f"Choose pack:\n{config_files_string}\n")
+        else:
+            selected_pack_name = pack_overide
 
         self.pack_info = PackInfo.parse(selected_pack_name)
         self.pack_dir = parse_dir_keywords(self.pack_info.directory)
@@ -104,7 +108,10 @@ class Packer:
         run_options_string = ""
         for run_option in self.pack_info.run_options:
             run_options_string += f"- {run_option.name}\n"
-        selected_run_option = input(f"Choose run option:\n{run_options_string}\n")
+        if run_option_overide is None:
+            selected_run_option = input(f"Choose run option:\n{run_options_string}\n")
+        else:
+            selected_run_option = run_option_overide
 
         self.run_option = self.pack_info.get_run_option(selected_run_option)
 
@@ -114,9 +121,14 @@ class Packer:
             self.version = input("Resource pack version: ")
 
         # Config
-        self.configs = self.run_option.get_configs(self.pack_info.configs, self.logger)
+        if self.configs is None:
+            self.configs = self.run_option.get_configs(self.pack_info.configs, self.logger)
 
         # Pack
+        if self.run_option.out_dir == MAIN_SETTINGS.out_dir:
+            self.clear_temp()
+
+        self.clear_out()
         start_time = default_timer()
 
         if len(self.configs) > 1:
@@ -126,6 +138,11 @@ class Packer:
             self._pack(self.configs[0])
 
         self.logger.info(f"Time: {default_timer() - start_time} Seconds")
+
+        # Rerun
+        if self.run_option.rerun:
+            input("\nPress enter to rerun...")
+            self.start(selected_pack_name, selected_run_option)
 
     def _pack(self, config: Config):
         pack_name = parse_name_scheme_keywords(self.pack_info.name_scheme, path.basename(self.pack_dir), self.version,
@@ -190,11 +207,6 @@ class Packer:
             # Publish to CurseForge
             if self.run_option.publish:
                 UploadFileRequest(self.pack_info, config, output, temp_pack_dir, pack_name, "release").upload()
-
-        # Rerun
-        if self.run_option.rerun:
-            input("\nPress enter to rerun...")
-            self._pack(config)
 
     def _copy_pack(self, src: str, dest: str):
         files = glob(path.join(src, "**"), recursive=True)
