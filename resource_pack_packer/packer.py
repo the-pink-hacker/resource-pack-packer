@@ -121,8 +121,7 @@ class Packer:
             self.version = input("Resource pack version: ")
 
         # Config
-        if self.configs is None:
-            self.configs = self.run_option.get_configs(self.pack_info.configs, self.logger)
+        self.configs = self.run_option.get_configs(self.pack_info.configs, self.logger)
 
         # Pack
         if self.run_option.out_dir == MAIN_SETTINGS.out_dir:
