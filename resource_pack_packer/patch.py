@@ -373,7 +373,7 @@ class Mixin:
             # Checks if file exists
             if file_data is None:
                 logger.warning(f"File couldn't be found: {file_path}")
-                return
+                continue
 
             json_directory = self.selector.run(file_data, logger)
 
