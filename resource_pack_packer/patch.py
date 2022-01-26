@@ -156,7 +156,7 @@ def _patch_remove(pack, patch, logger: logging.Logger):
                 shutil.rmtree(file_abs)
                 logging.info(f"Removed folder [{i}/{len(files)}]: {file_abs}")
         else:
-            logging.error(f"File couldn't be found: {file_abs}")
+            logging.warning(f"File couldn't be found: {file_abs}")
 
 
 def _get_json_file(file_dir: str) -> dict:
@@ -372,7 +372,7 @@ class Mixin:
 
             # Checks if file exists
             if file_data is None:
-                logger.error(f"File couldn't be found: {file_path}")
+                logger.warning(f"File couldn't be found: {file_path}")
                 return
 
             json_directory = self.selector.run(file_data, logger)
@@ -500,6 +500,6 @@ def _patch_modifier(pack: str, patch: Patch, logger: logging.Logger):
                 else:
                     logger.error(f"file lacks elements: {model}")
             else:
-                logger.error(f"File couldn't be found: {model}")
+                logger.warning(f"File couldn't be found: {model}")
     else:
         logger.error(f"Incorrect modifier type: {type}")
