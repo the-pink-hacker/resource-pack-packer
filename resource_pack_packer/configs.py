@@ -83,7 +83,10 @@ class PackInfo:
         else:
             logger.error("Couldn't parse configs")
 
-        self.run_options = RunOptions.parse(data["run_options"])
+        if "run_options" in data:
+            self.run_options = RunOptions.parse(data["run_options"])
+        else:
+            self.run_options = RunOptions.parse(MAIN_SETTINGS.run_options)
 
         self.curseforge_id = None
         self.curseforge_changelog_type = CHANGELOG_TYPE_MARKDOWN
@@ -96,6 +99,10 @@ class PackInfo:
 
     def get_run_option(self, name: str) -> Union["RunOptions", None]:
         for run_option in self.run_options:
+            if run_option.name == name:
+                return run_option
+        # Default run options
+        for run_option in MAIN_SETTINGS.run_options:
             if run_option.name == name:
                 return run_option
         return None

@@ -10,7 +10,7 @@ from threading import Thread
 from timeit import default_timer
 from typing import Union
 
-from resource_pack_packer.configs import PackInfo, parse_name_scheme_keywords, Config
+from resource_pack_packer.configs import PackInfo, parse_name_scheme_keywords, Config, RunOptions
 from resource_pack_packer.curseforge import UploadFileRequest
 from resource_pack_packer.settings import MAIN_SETTINGS, parse_dir_keywords
 

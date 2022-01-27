@@ -36,17 +36,22 @@ class Settings:
         self.patch_dir = ""
         self.curseforge = ""
         self.working_directory = ""
+        self.run_options = None
 
     def load(self):
         with open("settings.json", "r") as file:
             data = json.load(file)
 
-        self.pack_folder = data["locations"]["pack_folder"]
-        self.temp_dir = data["locations"]["temp"]
-        self.out_dir = data["locations"]["out"]
-        self.patch_dir = data["locations"]["patch"]
-        self.working_directory = data["locations"]["working_directory"]
-        self.curseforge = data["api_tokens"]["curseforge"]
+        try:
+            self.pack_folder = data["locations"]["pack_folder"]
+            self.temp_dir = data["locations"]["temp"]
+            self.out_dir = data["locations"]["out"]
+            self.patch_dir = data["locations"]["patch"]
+            self.working_directory = data["locations"]["working_directory"]
+            self.curseforge = data["api_tokens"]["curseforge"]
+            self.run_options = data["run_options"]
+        except KeyError:
+            raise KeyError("Settings are incompatible. Delete settings.json file to fix.")
 
     def save(self):
         data = {
@@ -59,7 +64,8 @@ class Settings:
             },
             "api_tokens": {
                 "curseforge": self.curseforge
-            }
+            },
+            "run_options": self.run_options
         }
         with open("settings.json", "w") as file:
             json.dump(data, file, indent="\t")
@@ -78,6 +84,29 @@ def get_settings() -> Settings:
         settings.out_dir = "out"
         settings.patch_dir = "patches"
         settings.working_directory = folder_dialog(title="Select Working Directory")
+        settings.run_options = {
+            "dev": {
+                "configs": "?",
+                "minify_json": False,
+                "delete_empty_folders": False,
+                "zip_pack": False,
+                "out_dir": "#packdir",
+                "version": "DEV",
+                "rerun": True
+            },
+            "build": {
+              "configs": "*",
+              "minify_json": True,
+              "delete_empty_folders": True,
+              "zip_pack": True
+            },
+            "build_single": {
+              "configs": "?",
+              "minify_json": True,
+              "delete_empty_folders": True,
+              "zip_pack": True
+            }
+        }
         settings.save()
         return settings
 
