@@ -1,28 +1,22 @@
 import json
 import logging
+from enum import Enum
 from os import path
+from typing import Optional, List
 
 import requests
 from markdown import markdown
 
+from resource_pack_packer.configs import Config, PackInfo
 from resource_pack_packer.settings import MAIN_SETTINGS
 
 URL_CURSEFORGE = "https://minecraft.curseforge.com"
 URL_VERSIONS = f"{URL_CURSEFORGE}/api/game/versions"
 
-RELEASE_TYPE_ALPHA = "alpha"
-RELEASE_TYPE_BETA = "beta"
-RELEASE_TYPE_RELEASE = "release"
-
-CHANGELOG_TYPE_HTML = "html"
-CHANGELOG_TYPE_MARKDOWN = "markdown"
-CHANGELOG_TYPE_MARKDOWN_HTML = "markdown-html"
-
-
 VERSIONS = []
 
 
-def get_versions():
+def get_versions() -> Optional[List[dict]]:
     versions = requests.get(URL_VERSIONS, params={"token": MAIN_SETTINGS.curseforge})
 
     if versions.ok:
@@ -47,7 +41,7 @@ def get_game_version(version, versions):
     return None
 
 
-def get_version_id(name, versions):
+def get_version_id(name: str, versions: List[dict]) -> Optional[str]:
     game_version = get_game_version(name, versions)
 
     for version in versions:
@@ -55,10 +49,10 @@ def get_version_id(name, versions):
             if version["gameVersionTypeID"] == game_version:
                 return version["id"]
     logging.warning(f"Version not found: {name}")
-    return None
+    return
 
 
-def versions_to_ids(names, versions):
+def versions_to_ids(names: List[str], versions: List[dict]) -> List[str]:
     ids = []
 
     for name in names:
@@ -70,66 +64,83 @@ def versions_to_ids(names, versions):
     return ids
 
 
-def get_changelog(temp_pack_dir, changelog_type):
-    if changelog_type == CHANGELOG_TYPE_HTML:
-        changelog_dir = path.join(temp_pack_dir, "changelog.html")
-    elif changelog_type == CHANGELOG_TYPE_MARKDOWN:
-        changelog_dir = path.join(temp_pack_dir, "changelog.md")
-    elif changelog_type == CHANGELOG_TYPE_MARKDOWN_HTML:
-        changelog_dir = path.join(temp_pack_dir, "changelog.md")
-    else:
-        return ""
+class ChangelogType(Enum):
+    HTML = "html"
+    MARKDOWN = "markdown"
+    MARKDOWN_HTML = "markdown-html"
+
+
+def get_changelog(temp_pack_dir: str, changelog_type: str) -> str:
+    match changelog_type:
+        case ChangelogType.HTML.value:
+            changelog_dir = path.join(temp_pack_dir, "changelog.html")
+        case ChangelogType.MARKDOWN.value:
+            changelog_dir = path.join(temp_pack_dir, "changelog.md")
+        case ChangelogType.MARKDOWN_HTML.value:
+            changelog_dir = path.join(temp_pack_dir, "changelog.md")
+        case _:
+            logging.warning(f"Incorrect changelog type: {changelog_type}. Defaulting to markdown")
+            changelog_dir = path.join(temp_pack_dir, "changelog.md")
 
     if path.exists(changelog_dir):
         with open(changelog_dir, "r") as changelog:
             changelog_content = changelog.read()
 
             # Converts to html if set to markdown-html
-            if changelog_type == CHANGELOG_TYPE_MARKDOWN_HTML:
+            if changelog_type == ChangelogType.MARKDOWN_HTML.value:
                 changelog_content = markdown(changelog_content)
 
             return changelog_content
     else:
         logging.warning(f"Changelog not found: {changelog_dir}")
-        return None
+        return ""
 
 
-def parse_release_type(release_type):
-    if release_type.lower() == RELEASE_TYPE_RELEASE:
-        return RELEASE_TYPE_RELEASE
-    elif release_type.lower() == RELEASE_TYPE_BETA:
-        return RELEASE_TYPE_BETA
-    elif release_type.lower() == RELEASE_TYPE_ALPHA:
-        return RELEASE_TYPE_ALPHA
-    else:
-        logging.warning(f"Incorrect release type: {release_type}, defaulting to: {RELEASE_TYPE_RELEASE}")
-        return RELEASE_TYPE_RELEASE
+class ReleaseType(Enum):
+    RELEASE = "release"
+    BETA = "beta"
+    ALPHA = "alpha"
 
 
-def parse_changelog_type(changelog_type):
-    if changelog_type == CHANGELOG_TYPE_HTML:
-        return CHANGELOG_TYPE_HTML
-    elif changelog_type == CHANGELOG_TYPE_MARKDOWN:
-        return CHANGELOG_TYPE_MARKDOWN
-    elif changelog_type == CHANGELOG_TYPE_MARKDOWN_HTML:
-        return CHANGELOG_TYPE_HTML
-    else:
-        logging.warning(f"Incorrect changelog type: {changelog_type}, defaulting to: {CHANGELOG_TYPE_MARKDOWN}")
-        return CHANGELOG_TYPE_MARKDOWN
+def parse_release_type(release_type: str) -> str:
+    match release_type.lower():
+        case ReleaseType.RELEASE.value:
+            return ReleaseType.RELEASE.value
+        case ReleaseType.BETA.value:
+            return ReleaseType.BETA.value
+        case ReleaseType.ALPHA.value:
+            return ReleaseType.ALPHA.value
+        case _:
+            logging.warning(f"Incorrect release type: {release_type}. Defaulting to: {ReleaseType.RELEASE.value}")
+            return ReleaseType.RELEASE.value
 
 
+def parse_changelog_type(changelog_type: str) -> str:
+    match changelog_type:
+        case ChangelogType.HTML.value:
+            return ChangelogType.HTML.value
+        case ChangelogType.MARKDOWN.value:
+            return ChangelogType.MARKDOWN.value
+        case ChangelogType.MARKDOWN_HTML.value:
+            return ChangelogType.MARKDOWN_HTML.value
+        case _:
+            logging.warning(f"Incorrect changelog type: {changelog_type}. Defaulting to: {ChangelogType.MARKDOWN.value}")
+            return ChangelogType.MARKDOWN.value
+
+
+# Only called when user wants to upload to curseforge
 def init():
     global VERSIONS
-    # All of the versions of minecraft on curseforge
+    # All the versions of minecraft on curseforge
     VERSIONS = get_versions()
 
 
 class UploadFileRequest:
-    def __init__(self, pack_info, config, output_dir, temp_pack_dir, pack_name, release_type):
+    def __init__(self, pack_info: PackInfo, config: Config, output_dir: str, temp_pack_dir: str, pack_name: str, release_type: str):
         self.pack_info = pack_info
         self.config = config
         self.output_dir = output_dir
-        logging.info(get_changelog(temp_pack_dir, CHANGELOG_TYPE_MARKDOWN_HTML))
+        logging.info(get_changelog(temp_pack_dir, ChangelogType.HTML.value))
         self.metadata = {
             "changelog": get_changelog(temp_pack_dir, self.pack_info.curseforge_changelog_type),
             "changelogType": parse_changelog_type(self.pack_info.curseforge_changelog_type),
@@ -140,9 +151,11 @@ class UploadFileRequest:
 
     def upload(self):
         with open(self.output_dir, "rb") as file:
-            upload = requests.post(f"{URL_CURSEFORGE}/api/projects/{self.pack_info.curseforge_id}/upload-file",
-                                   params={"token": MAIN_SETTINGS.curseforge},
-                                   data={"metadata": json.dumps(self.metadata, ensure_ascii=False)},
-                                   files={"file": file})
+            upload = requests.post(
+                f"{URL_CURSEFORGE}/api/projects/{self.pack_info.curseforge_id}/upload-file",
+                params={"token": MAIN_SETTINGS.curseforge},
+                data={"metadata": json.dumps(self.metadata, ensure_ascii=False)},
+                files={"file": file}
+            )
 
             logging.info(upload.json())
