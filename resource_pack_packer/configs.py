@@ -5,7 +5,6 @@ from glob import glob
 from os import path
 from typing import Union, List
 
-from resource_pack_packer.curseforge import CHANGELOG_TYPE_MARKDOWN
 from resource_pack_packer.patch import PatchFile
 from resource_pack_packer.settings import MAIN_SETTINGS
 from resource_pack_packer.settings import parse_keyword
@@ -88,9 +87,6 @@ class PackInfo:
         else:
             self.run_options = RunOptions.parse(MAIN_SETTINGS.run_options)
 
-        self.curseforge_id = None
-        self.curseforge_changelog_type = CHANGELOG_TYPE_MARKDOWN
-
         if check_option(data, "curseforge"):
             self.curseforge_id = data["curseforge"]["id"]
 
@@ -151,7 +147,7 @@ class Config:
 
 class RunOptions:
     def __init__(self, name: str, configs: Union[List[str], str], minify_json: bool, delete_empty_folders: bool,
-                 zip_pack: bool, out_dir: str, version: Union[str, None], publish: bool, rerun: bool):
+                 zip_pack: bool, out_dir: str, version: Union[str, None], rerun: bool):
         self.name = name
         self.configs = configs
         self.minify_json = minify_json
@@ -159,7 +155,6 @@ class RunOptions:
         self.zip_pack = zip_pack
         self.out_dir = out_dir
         self.version = version
-        self.publish = publish
         self.rerun = rerun
 
     def get_configs(self, configs: List[Config], logger: logging.Logger) -> Union[
@@ -203,11 +198,6 @@ class RunOptions:
             else:
                 version = None
 
-            if "publish" in value:
-                publish = value["publish"]
-            else:
-                publish = False
-
             if "rerun" in value:
                 rerun = value["rerun"]
             else:
@@ -221,7 +211,6 @@ class RunOptions:
                 value["zip_pack"],
                 out_dir,
                 version,
-                publish,
                 rerun
             ))
         return run_options

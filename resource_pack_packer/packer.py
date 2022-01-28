@@ -11,7 +11,6 @@ from timeit import default_timer
 from typing import Union
 
 from resource_pack_packer.configs import PackInfo, parse_name_scheme_keywords, Config, RunOptions
-from resource_pack_packer.curseforge import UploadFileRequest
 from resource_pack_packer.settings import MAIN_SETTINGS, parse_dir_keywords
 
 
@@ -195,17 +194,9 @@ class Packer:
 
         # Zip
         if self.run_option.zip_pack:
-            if self.run_option.publish:
-                output = temp_pack_dir + ".zip"
-            else:
-                output = path.normpath(path.join(self.OUT_DIR, pack_name + ".zip"))
-
+            output = path.normpath(path.join(self.OUT_DIR, pack_name + ".zip"))
             zip_dir(temp_pack_dir, output)
             logger.info(f"Completed pack: {output}")
-
-            # Publish to CurseForge
-            if self.run_option.publish:
-                UploadFileRequest(self.pack_info, config, output, temp_pack_dir, pack_name, "release").upload()
 
     def _copy_pack(self, src: str, dest: str):
         files = glob(path.join(src, "**"), recursive=True)
