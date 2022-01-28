@@ -1,6 +1,7 @@
 import json
 import logging
 import os.path
+import sys
 from os import path
 import tkinter
 from tkinter import filedialog
@@ -79,11 +80,15 @@ def get_settings() -> Settings:
         return settings
     else:
         settings = Settings()
-        settings.pack_folder = path.join(folder_dialog(title="Select Minecraft Directory"), "resourcepacks")
+        if sys.platform == "windows":
+            settings.pack_folder = path.join(folder_dialog(title="Select Minecraft Directory", directory="%APPDATA%/.minecraft"), "resourcepacks")
+        else:
+            settings.pack_folder = path.join(folder_dialog(title="Select Minecraft Directory", directory="~/.minecraft"), "resourcepacks")
+
         settings.temp_dir = "temp"
         settings.out_dir = "out"
         settings.patch_dir = "patches"
-        settings.working_directory = folder_dialog(title="Select Working Directory")
+        settings.working_directory = folder_dialog(title="Select Working Directory", directory="~/Documents")
         settings.run_options = {
             "dev": {
                 "configs": "?",
