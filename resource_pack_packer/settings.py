@@ -35,7 +35,6 @@ class Settings:
         self.temp_dir = ""
         self.out_dir = ""
         self.patch_dir = ""
-        self.curseforge = ""
         self.working_directory = ""
         self.run_options = None
 
@@ -49,7 +48,6 @@ class Settings:
             self.out_dir = data["locations"]["out"]
             self.patch_dir = data["locations"]["patch"]
             self.working_directory = data["locations"]["working_directory"]
-            self.curseforge = data["api_tokens"]["curseforge"]
             self.run_options = data["run_options"]
         except KeyError:
             raise KeyError("Settings are incompatible. Delete settings.json file to fix.")
@@ -62,9 +60,6 @@ class Settings:
                 "out": self.out_dir,
                 "patch": self.patch_dir,
                 "working_directory": self.working_directory
-            },
-            "api_tokens": {
-                "curseforge": self.curseforge
             },
             "run_options": self.run_options
         }
