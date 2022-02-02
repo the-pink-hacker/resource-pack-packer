@@ -1,0 +1,408 @@
+{
+  "$id": "https://raw.githubusercontent.com/RyanGar46/resource-pack-packer/main/schema/patch.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Patch",
+  "description": "Allows files in a resource pack to be edited, removed, and added",
+  "type": "object",
+  "properties": {
+    "patches": {
+      "description": "A array of patches. Patches are applied first to last",
+      "type": "array",
+      "items": {
+        "description": "A patch",
+        "type": "object",
+        "properties": {
+          "type": {
+            "description": "The type of patch",
+            "type": "string",
+            "enum": [
+              "replace",
+              "remove",
+              "mixin_json",
+              "modifier"
+            ]
+          },
+          "patch": {
+            "description": "Contains all arguments for a patch",
+            "type": "object"
+          }
+        },
+        "if": {
+          "properties": {
+            "type": {
+              "const": "replace"
+            }
+          }
+        },
+        "then": {
+          "properties": {
+            "patch": {
+              "properties": {
+                "directory": {
+                  "description": "The location of the folder that should be apllied on top of the resource pack",
+                  "type": "string"
+                }
+              },
+              "required": ["directory"]
+            }
+          }
+        },
+        "else": {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "remove"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "patch": {
+                "properties": {
+                  "block_files": {
+                    "description": "Defines what files are included in a block",
+                    "type": "array",
+                    "items": {
+                      "description": "A block file",
+                      "type": "string"
+                    }
+                  },
+                  "blocks": {
+                    "description": "A array of the blocks that should be removed",
+                    "type": "array",
+                    "items": {
+                      "description": "A block",
+                      "type": "object",
+                      "properties": {
+                        "block": {
+                          "description": "The name of the normal variant of the block",
+                          "type": "string"
+                        },
+                        "plural": {
+                          "description": "Is the block name plural",
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  },
+                  "files": {
+                    "description": "A array of files that should be removed",
+                    "type": "array",
+                    "items": {
+                      "description": "A file",
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "mixin_json"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "patch": {
+                  "properties": {
+                    "mixins": {
+                      "description": "A array json mixins",
+                      "type": "array",
+                      "items": {
+                        "description": "A json mixin",
+                        "type": "object",
+                        "properties": {
+                          "file_selector": {
+                            "description": "Determins the files being edited",
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "description": "The type of file selector",
+                                "type": "string",
+                                "enum": [
+                                  "file",
+                                  "path"
+                                ]
+                              },
+                              "arguments": {
+                                "description": "Contains arguments for the selector",
+                                "type": "object"
+                              }
+                            },
+                            "if": {
+                              "properties": {
+                                "type": {
+                                  "const": "file"
+                                }
+                              }
+                            },
+                            "then": {
+                              "properties": {
+                                "arguments": {
+                                  "properties": {
+                                    "files": {
+                                      "description": "A array of the selected files",
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string"
+                                      }
+                                    }
+                                  },
+                                  "required": ["files"]
+                                }
+                              }
+                            },
+                            "else": {
+                              "if": {
+                                "properties": {
+                                  "type": {
+                                    "const": "path"
+                                  }
+                                }
+                              },
+                              "then": {
+                                "properties": {
+                                  "arguments": {
+                                    "properties": {
+                                      "path": {
+                                        "description": "Where the files are located",
+                                        "type": "string"
+                                      },
+                                      "recursive": {
+                                        "description": "Should files be recursivly searched for in sub folders",
+                                        "type": "boolean"
+                                      },
+                                      "regex": {
+                                        "description": "Further search through selected files with a regex pattern",
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": ["path"]
+                                  }
+                                }
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "arguments"
+                            ]
+                          },
+                          "selector": {
+                            "description": "Determins where in the file the modifiers will be applied",
+                            "type": "object",
+                            "properties": {
+                              "type": {
+                                "description": "The type of selector",
+                                "type": "string",
+                                "enum": ["path"]
+                              },
+                              "arguments": {
+                                "description": "The arguments of the selector",
+                                "type": "object"
+                              }
+                            },
+                            "if": {
+                              "properties": {
+                                "type": {
+                                  "const": "path"
+                                }
+                              }
+                            },
+                            "then": {
+                              "properties": {
+                                "arguments": {
+                                  "properties": {
+                                    "location": {
+                                      "description": "The location of the key that will be selected",
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": ["location"]
+                                }
+                              }
+                            },
+                            "required": [
+                              "type",
+                              "arguments"
+                            ]
+                          },
+                          "modifiers": {
+                            "description": "A array of modifiers",
+                            "type": "array",
+                            "items": {
+                              "description": "A modifier",
+                              "type": "object",
+                              "properties": {
+                                "type": {
+                                  "description": "The type of modifier",
+                                  "type": "string",
+                                  "enum": [
+                                    "set",
+                                    "replace"
+                                  ]
+                                },
+                                "arguments": {
+                                  "description": "The arguments for the modifier",
+                                  "type": "object"
+                                }
+                              },
+                              "if": {
+                                "properties": {
+                                  "type": {
+                                    "const": "set"
+                                  }
+                                }
+                              },
+                              "then": {
+                                "properties": {
+                                  "arguments": {
+                                    "properties": {
+                                      "data": {
+                                        "description": "The data that should be put inside of the selected key"
+                                      },
+                                      "merge": {
+                                        "description": "Should the data merge with the original data",
+                                        "type": "boolean"
+                                      },
+                                      "add": {
+                                        "description": "Should new keys be added",
+                                        "type": "boolean"
+                                      }
+                                    },
+                                    "required": ["data"]
+                                  }
+                                }
+                              },
+                              "else": {
+                                "if": {
+                                  "properties": {
+                                    "type": {
+                                      "const": "replace"
+                                    }
+                                  }
+                                },
+                                "then": {
+                                  "properties": {
+                                    "arguments": {
+                                      "properties": {
+                                        "select": {
+                                          "description": "A regex pattern",
+                                          "type": "string"
+                                        },
+                                        "replacement": {
+                                          "description": "A string to be put in place of the selected text",
+                                          "type": "string"
+                                        }
+                                      },
+                                      "required": [
+                                        "select",
+                                        "replacement"
+                                      ]
+                                    }
+                                  }
+                                }
+                              },
+                              "required": [
+                                "type",
+                                "arguments"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "file_selector",
+                          "selector",
+                          "modifiers"
+                        ]
+                      }
+                    }
+                  },
+                  "required": ["mixins"]
+                }
+              }
+            },
+            "else": {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "modifier"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "patch": {
+                    "properties": {
+                      "type": {
+                        "description": "The type of modifier",
+                        "type": "string",
+                        "enum": ["model_margin"]
+                      },
+                      "arguments": {
+                        "description": "The arguments of the modifier",
+                        "type": "object"
+                      }
+                    },
+                    "if": {
+                      "properties": {
+                        "type": {
+                          "const": "model_margin"
+                        }
+                      }
+                    },
+                    "then": {
+                      "properties": {
+                        "arguments": {
+                          "properties": {
+                            "offset": {
+                              "description": "How much each cube should move away from the center",
+                              "type": "number"
+                            },
+                            "random_offset": {
+                              "description": "The max amount of random distance each cube should move from the center",
+                              "type": "number"
+                            },
+                            "seed": {
+                              "description": "The seed for the random number generator. The default is 0",
+                              "type": "number"
+                            },
+                            "models": {
+                              "description": "A array of models",
+                              "type": "array",
+                              "items": {
+                                "description": "A model in the minecraf identifier format",
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "required": [
+                            "offset",
+                            "random_offset",
+                            "models"
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "arguments"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "type",
+          "patch"
+        ]
+      }
+    }
+  },
+  "required": ["patches"]
+}
