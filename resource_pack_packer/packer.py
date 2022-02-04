@@ -14,35 +14,6 @@ from resource_pack_packer.configs import PackInfo, parse_name_scheme_keywords, C
 from resource_pack_packer.settings import MAIN_SETTINGS, parse_dir_keywords
 
 
-def _auto_pack_check(version, index):
-    try:
-        return int(version.split(".")[index])
-    except IndexError:
-        return 0
-
-
-def auto_pack(version):
-    version = str(version)
-    if _auto_pack_check(version, 1) >= 17:
-        return _auto_pack_check(version, 1) - 10
-    elif _auto_pack_check(version, 1) == 16:
-        return 6
-    elif _auto_pack_check(version, 1) >= 15:
-        return 5
-    elif _auto_pack_check(version, 1) >= 13:
-        return 4
-    elif _auto_pack_check(version, 1) >= 11:
-        return 3
-    elif _auto_pack_check(version, 1) >= 9:
-        return 2
-    elif _auto_pack_check(version, 1) >= 7:
-        return 1
-    elif _auto_pack_check(version, 1) >= 6:
-        if _auto_pack_check(version, 2) == 1:
-            return 1
-    return 0
-
-
 def zip_dir(src, dest):
     if not path.exists(path.dirname(dest)):
         os.makedirs(path.dirname(dest))
@@ -51,12 +22,6 @@ def zip_dir(src, dest):
         for root, dirs, files in os.walk(src):
             for file in files:
                 zip_file.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), src))
-
-
-RUN_TYPE_CONFIG = "config"
-RUN_TYPE_DEV = "dev"
-RUN_TYPE_MANUAL = "manual"
-RUN_TYPE_PUBLISH = "publish"
 
 
 def minify_json(directory):
@@ -163,13 +128,19 @@ class Packer:
             logger.info("Deleting textures...")
             self.delete(temp_pack_dir, "textures", config.ignore_textures, logger)
 
-        # Regenerate Meta
-        if config.regenerate_meta:
-            logger.info("Regenerating meta...")
+        # Generate Meta
+        with open(os.path.join(temp_pack_dir, "pack.mcmeta"), "w") as file:
+            meta = {
+                "pack": {
+                    "pack_format": config.pack_format,
+                    "description": self.pack_info.description
+                }
+            }
             if config.minify_json and self.run_option.minify_json:
-                self.regenerate_meta(temp_pack_dir, config.mc_version, logger, indent=None)
+                indent = None
             else:
-                self.regenerate_meta(temp_pack_dir, config.mc_version, logger)
+                indent = 2
+            json.dump(meta, file, ensure_ascii=False, indent=indent)
 
         # Minify Json
         if config.minify_json and self.run_option.minify_json:
@@ -240,19 +211,6 @@ class Packer:
                     if delete_files:
                         shutil.rmtree(fold)
                 logger.info(f"Deleted texture [{i}/{len(namespaces)}]: {path.basename(namespace)}")
-
-    def regenerate_meta(self, directory, version, logger: logging.Logger, indent: Union[int, None] = 2):
-        pack_format = auto_pack(version)
-        logger.info(f"Pack Format: {pack_format}")
-
-        with open(path.join(directory, "pack.mcmeta"), "r") as file:
-            data = json.load(file)
-
-        with open(path.join(directory, "pack.mcmeta"), "w", newline="\n") as file:
-            if data["pack"]["pack_format"] != pack_format:
-                data["pack"]["pack_format"] = pack_format
-
-            json.dump(data, file, ensure_ascii=False, indent=indent)
 
     def minify_json_files(self, temp_pack_dir):
         files = glob(path.join(temp_pack_dir, "**"), recursive=True)

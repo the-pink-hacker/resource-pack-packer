@@ -13,6 +13,10 @@
       "description": "How each built pack should be named",
       "type": "string"
     },
+    "description": {
+      "description": "The description that is shown in-game",
+      "type": "string"
+    },
     "configs": {
       "description": "A array of every configuration",
       "type": "object",
@@ -24,7 +28,7 @@
             "type": "array",
             "minItems": 1,
             "items": {
-              "description": "A Minecarft version",
+              "description": "A Minecraft version",
               "type": "string"
             }
           },
@@ -49,9 +53,9 @@
               "ignore"
             ]
           },
-          "regenerate_meta": {
-            "description": "Should the pack.mcmeta file be updated for this",
-            "type": "boolean"
+          "pack_format": {
+            "description": "The pack format. If left unset, it will be set based off of the Minecraft version",
+            "type": "number"
           },
           "minify_json": {
             "description": "Should all json files located in the pack be striped of all indentation",
@@ -79,6 +83,7 @@
   "required": [
     "directory",
     "name_scheme",
+    "description",
     "configs"
   ]
 }

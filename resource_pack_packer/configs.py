@@ -66,10 +66,17 @@ class PackInfo:
 
         self.directory = data["directory"]
         self.name_scheme = data["name_scheme"]
-        self.dependencies = []
+
+        if "description" in data:
+            self.description = data["description"]
+        else:
+            self.description = ""
+            logger.warning("Description is missing in pack info")
 
         if check_option(data, "dev") and check_option(data["dev"], "dependencies"):
             self.dependencies = data["dev"]["dependencies"]
+        else:
+            self.dependencies = []
 
         self.configs = []
 
@@ -129,7 +136,10 @@ class Config:
         if check_option(config, "delete_empty_folders"):
             self.delete_empty_folders = config["delete_empty_folders"]
 
-        self.regenerate_meta = config["regenerate_meta"]
+        if "pack_format" not in config:
+            self.pack_format = self.get_auto_pack_format()
+        else:
+            self.pack_format = config["pack_format"]
 
         self.minify_json = False
 
@@ -143,6 +153,29 @@ class Config:
                 self.patches.append(PatchFile.parse_file(
                     os.path.join(MAIN_SETTINGS.working_directory, MAIN_SETTINGS.patch_dir, f"{patch}.json"), patch,
                     logger))
+
+    def get_auto_pack_format(self) -> int:
+        version = int(self.mc_version.split(".")[1])
+        if version >= 18:
+            pack_format = 8
+        elif version >= 17:
+            pack_format = 7
+        elif version >= 16:
+            pack_format = 6
+        elif version >= 15:
+            pack_format = 5
+        elif version >= 13:
+            pack_format = 4
+        elif version >= 11:
+            pack_format = 3
+        elif version >= 9:
+            pack_format = 2
+        elif version >= 6:
+            pack_format = 1
+        else:
+            pack_format = 1
+            logging.warning(f"Couldn't find correct pack format for: '{self.mc_version}'. Defaulting to: {pack_format}")
+        return pack_format
 
 
 class RunOptions:
