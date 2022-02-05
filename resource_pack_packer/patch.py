@@ -450,6 +450,16 @@ class ModifierType(Enum):
     MODEL_MARGIN = "model_margin"
 
 
+class Direction(Enum):
+    NORTH = "north"
+    EAST = "east"
+    SOUTH = "south"
+    WEST = "west"
+    UP = "up"
+    DOWN = "down"
+    CENTER = "center"
+
+
 def _patch_modifier(pack: str, patch: Patch, logger: logging.Logger):
     type = patch.patch["type"]
     if type == ModifierType.MODEL_MARGIN.value:
@@ -471,26 +481,46 @@ def _patch_modifier(pack: str, patch: Patch, logger: logging.Logger):
                     model_data = json.load(file)
                 # Check if model contains elements
                 if "elements" in model_data and len(model_data["elements"]) > 0:
+                    north_offset = random.uniform(0, random_offset) + offset
+                    east_offset = random.uniform(0, random_offset) + offset
+                    south_offset = random.uniform(0, random_offset) + offset
+                    west_offset = random.uniform(0, random_offset) + offset
+                    up_offset = random.uniform(0, random_offset) + offset
+                    down_offset = random.uniform(0, random_offset) + offset
                     new_elements = []
                     for element in model_data["elements"]:
                         position_from = element["from"]
                         position_to = element["to"]
                         direction = get_cube_direction(position_from, position_to)
-                        # Check if not main cube
-                        if direction != "center":
-                            calculated_offset = random.uniform(0, random_offset) + offset
-                            if direction == "north":
-                                position_from[2] -= calculated_offset
-                            elif direction == "east":
-                                position_to[0] += calculated_offset
-                            elif direction == "south":
-                                position_to[2] += calculated_offset
-                            elif direction == "west":
+                        calculated_offset = random.uniform(0, random_offset) + offset
+                        # Move cubes
+                        if direction != Direction.CENTER.value:
+                            # Center of block offset
+                            if direction == Direction.NORTH.value:
+                                position_from[2] -= north_offset
+                            elif direction == Direction.EAST.value:
+                                position_to[0] += east_offset
+                            elif direction == Direction.SOUTH.value:
+                                position_to[2] += south_offset
+                            elif direction == Direction.WEST.value:
+                                position_from[0] -= west_offset
+                            elif direction == Direction.UP.value:
+                                position_to[1] += up_offset
+                            elif direction == Direction.DOWN.value:
+                                position_from[1] -= down_offset
+                            # Center of face offset
+                            if position_from[0] == 0:
                                 position_from[0] -= calculated_offset
-                            elif direction == "up":
-                                position_to[1] += calculated_offset
-                            elif direction == "down":
+                            if position_from[1] == 0:
                                 position_from[1] -= calculated_offset
+                            if position_from[2] == 0:
+                                position_from[2] -= calculated_offset
+                            if position_to[0] == 16:
+                                position_to[0] += calculated_offset
+                            if position_to[1] == 16:
+                                position_to[1] += calculated_offset
+                            if position_to[2] == 16:
+                                position_to[2] += calculated_offset
                             element["from"] = position_from
                             element["to"] = position_to
                         new_elements.append(element)
