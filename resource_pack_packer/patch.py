@@ -10,6 +10,7 @@ from os import path
 
 from typing import List, Union, Tuple
 
+from resource_pack_packer.selectors import FileSelector, parse_minecraft_identifier
 from resource_pack_packer.settings import MAIN_SETTINGS, parse_dir_keywords
 
 
@@ -253,49 +254,6 @@ def _check_json_node(root: dict, location: list) -> bool:
         return False
 
 
-class MixinFileSelectorType(Enum):
-    FILE = "file"
-    PATH = "path"
-
-
-class MixinFileSelector:
-    def __init__(self, selector_type: str, arguments: dict, pack):
-        self.selector_type = selector_type
-        self.arguments = arguments
-        self.pack = pack
-
-    def run(self, logger: logging.Logger) -> Union[List[str], None]:
-        match self.selector_type:
-            case MixinFileSelectorType.FILE.value:
-                return self.arguments["files"]
-            case MixinFileSelectorType.PATH.value:
-                file_path = self.arguments["path"]
-
-                recursive = False
-                if "recursive" in self.arguments:
-                    recursive = self.arguments["recursive"]
-
-                files = glob(os.path.join(self.pack, file_path, "*"), recursive=recursive)
-
-                if "regex" in self.arguments:
-                    regex = re.compile(self.arguments["regex"])
-
-                    sorted_files = []
-                    for file in files:
-                        if regex.match(os.path.relpath(file, os.path.join(self.pack, file_path))) is not None:
-                            sorted_files.append(os.path.relpath(file, self.pack))
-                    return sorted_files
-                else:
-                    return files
-            case _:
-                logger.error(f"Incorrect file selector type: {self.selector_type}")
-                return
-
-    @staticmethod
-    def parse(data: dict, pack):
-        return MixinFileSelector(data["type"], data["arguments"], pack)
-
-
 class MixinSelectorType(Enum):
     PATH = "path"
 
@@ -357,7 +315,7 @@ class MixinModifier:
 
 
 class Mixin:
-    def __init__(self, file_selector: MixinFileSelector, selector: MixinSelector, modifiers: List[MixinModifier],
+    def __init__(self, file_selector: FileSelector, selector: MixinSelector, modifiers: List[MixinModifier],
                  pack: str):
         self.file_selector = file_selector
         self.selector = selector
@@ -382,7 +340,7 @@ class Mixin:
 
     @staticmethod
     def parse(data: dict, pack: str):
-        return Mixin(MixinFileSelector.parse(data["file_selector"], pack),
+        return Mixin(FileSelector.parse(data["file_selector"], pack),
                      MixinSelector.parse(data["selector"]),
                      MixinModifier.parse(data["modifiers"]), pack)
 
@@ -395,27 +353,6 @@ def _patch_mixin_json(pack: str, patch: Patch, logger: logging.Logger):
         mixin = Mixin.parse(data, pack)
         logger.info(f"Completed mixin [{i}/{len(mixins)}]")
         mixin.run(logger)
-
-
-def parse_minecraft_file(file_path: str, folder: str, extension: str):
-    """
-    Parses a minecraft file path. Example:
-    minecraft:block/sandstone -> assets/minecraft/models/block/sandstone.json
-    :param file_path: A Minecraft file path
-    :param folder: The path from the namespace
-    :param extension: The file extension
-    :return: Relative path from resource pack
-    """
-    file_path = os.path.normpath(file_path)
-    namespace_regex = re.compile("^[a-z]*(?=:)")
-    namespace_match = re.match(namespace_regex, file_path)
-    if namespace_match is not None:
-        span = namespace_match.span()
-        namespace = file_path[span[0]:span[1]]
-        file_path = file_path.replace(f"{namespace}:", "")
-    else:
-        namespace = "minecraft"
-    return os.path.join("assets", namespace, folder, f"{file_path}.{extension}")
 
 
 def get_cube_direction(from_pos: Tuple[int], to_pos: Tuple[int]) -> Union[str, None]:
@@ -475,7 +412,7 @@ def _patch_modifier(pack: str, patch: Patch, logger: logging.Logger):
         random.seed(seed)
 
         for model in models:
-            file_path = os.path.join(pack, parse_minecraft_file(model, "models", "json"))
+            file_path = os.path.join(pack, parse_minecraft_identifier(model, "models", "json"))
             if os.path.exists(file_path):
                 with open(file_path, "r") as file:
                     model_data = json.load(file)
