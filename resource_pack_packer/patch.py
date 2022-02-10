@@ -43,7 +43,7 @@ class Patch:
             case PatchType.REPLACE.value:
                 _patch_replace(pack, self, logger)
             case PatchType.REMOVE.value:
-                _patch_remove(pack, self, logger)
+                _patch_remove(pack, pack_info, self, logger)
             case PatchType.MIXIN_JSON.value:
                 _patch_mixin_json(pack, pack_info, self, logger)
             case PatchType.MODIFIER.value:
@@ -107,46 +107,25 @@ def _remove_block(file):
 
 
 # Removes all specified files
-def _patch_remove(pack, patch, logger: logging.Logger):
-    files = []
-    if "files" in patch.patch:
-        files = patch.patch["files"]
+def _patch_remove(pack, pack_info, patch, logger: logging.Logger):
+    selector = FileSelector(patch.patch["type"], patch.patch["arguments"], pack)
+    files = selector.run(pack_info, logger)
 
-    blocks = []
-    if "blocks" in patch.patch:
-        blocks = patch.patch["blocks"]
+    filtered_files = []
+    for file in files:
+        if os.path.exists(file):
+            filtered_files.append(file)
+            print(len(filtered_files))
 
-    for i, block in enumerate(blocks, start=1):
-        block_name_plural = block["block"]
-
-        # Example: stone_bricks -> stone_brick
-        if check_option(block, "plural") and block["plural"]:
-            block_name = block_name_plural[:-1]
+    for i, file in enumerate(filtered_files, start=1):
+        # Removes file
+        if path.isfile(file):
+            os.remove(file)
+            logger.info(f"Removed file [{i}/{len(filtered_files)}]: {file}")
+        # Removes folder
         else:
-            block_name = block_name_plural
-
-        for block_file in patch.patch["block_files"]:
-            parsed_block_file = block_file.REPLACE("[block_name]", block_name)
-            parsed_block_file = parsed_block_file.REPLACE("[block_name_plural]", block_name_plural)
-
-            _remove_block(path.join(pack, path.normpath(parsed_block_file)))
-
-        logger.info(f"Removed block [{i}/{len(blocks)}]: {block_name_plural}")
-
-    for i, file in enumerate(files, start=1):
-        file_abs = path.join(pack, file)
-
-        if path.exists(path.dirname(file_abs)):
-            # Removes file
-            if path.isfile(file_abs):
-                os.remove(file_abs)
-                logging.info(f"Removed file [{i}/{len(files)}]: {file_abs}")
-            # Removes folder
-            else:
-                shutil.rmtree(file_abs)
-                logging.info(f"Removed folder [{i}/{len(files)}]: {file_abs}")
-        else:
-            logging.warning(f"File couldn't be found: {file_abs}")
+            shutil.rmtree(file)
+            logger.info(f"Removed folder [{i}/{len(filtered_files)}]: {file}")
 
 
 def _get_json_file(file_dir: str) -> dict:
