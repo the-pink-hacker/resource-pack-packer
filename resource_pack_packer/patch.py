@@ -10,7 +10,7 @@ from os import path
 
 from typing import List, Union, Tuple
 
-from resource_pack_packer.selectors import FileSelector, parse_minecraft_identifier
+from resource_pack_packer.selectors import FileSelector
 from resource_pack_packer.settings import parse_dir_keywords
 
 
@@ -47,7 +47,7 @@ class Patch:
             case PatchType.MIXIN_JSON.value:
                 _patch_mixin_json(pack, pack_info, self, logger)
             case PatchType.MODIFIER.value:
-                _patch_modifier(pack, self, logger)
+                _patch_modifier(pack, pack_info, self, logger)
             case _:
                 logger.error(f"Incorrect patch type: {self.type}")
 
@@ -364,10 +364,11 @@ class Direction(Enum):
     CENTER = "center"
 
 
-def _patch_modifier(pack: str, patch: Patch, logger: logging.Logger):
+def _patch_modifier(pack: str, pack_info, patch: Patch, logger: logging.Logger):
     type = patch.patch["type"]
     if type == ModifierType.MODEL_MARGIN.value:
-        models = patch.patch["arguments"]["models"]
+        selector = FileSelector(patch.patch["arguments"]["file_selector"]["type"], patch.patch["arguments"]["file_selector"]["arguments"], pack)
+        models = selector.run(pack_info, logger)
         offset = patch.patch["arguments"]["offset"]
         random_offset = patch.patch["arguments"]["random_offset"]
 
@@ -379,9 +380,8 @@ def _patch_modifier(pack: str, patch: Patch, logger: logging.Logger):
         random.seed(seed)
 
         for model in models:
-            file_path = os.path.join(pack, parse_minecraft_identifier(model, "models", "json"))
-            if os.path.exists(file_path):
-                with open(file_path, "r") as file:
+            if os.path.exists(model):
+                with open(model, "r") as file:
                     model_data = json.load(file)
                 # Check if model contains elements
                 if "elements" in model_data and len(model_data["elements"]) > 0:
@@ -429,7 +429,7 @@ def _patch_modifier(pack: str, patch: Patch, logger: logging.Logger):
                             element["to"] = position_to
                         new_elements.append(element)
                     model_data["elements"] = new_elements
-                    with open(file_path, "w") as file:
+                    with open(model, "w") as file:
                         json.dump(model_data, file, indent="\t")
                 else:
                     logger.error(f"file lacks elements: {model}")
