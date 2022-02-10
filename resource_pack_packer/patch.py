@@ -108,14 +108,13 @@ def _remove_block(file):
 
 # Removes all specified files
 def _patch_remove(pack, pack_info, patch, logger: logging.Logger):
-    selector = FileSelector(patch.patch["type"], patch.patch["arguments"], pack)
+    selector = FileSelector(patch.patch["file_selector"]["type"], patch.patch["file_selector"]["arguments"], pack)
     files = selector.run(pack_info, logger)
 
     filtered_files = []
     for file in files:
         if os.path.exists(file):
             filtered_files.append(file)
-            print(len(filtered_files))
 
     for i, file in enumerate(filtered_files, start=1):
         # Removes file
