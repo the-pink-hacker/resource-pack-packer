@@ -11,7 +11,7 @@ from os import path
 from typing import List, Union, Tuple
 
 from resource_pack_packer.selectors import FileSelector, parse_minecraft_identifier
-from resource_pack_packer.settings import MAIN_SETTINGS, parse_dir_keywords
+from resource_pack_packer.settings import parse_dir_keywords
 
 
 def check_option(root, option):
@@ -19,21 +19,6 @@ def check_option(root, option):
         return True
     else:
         return False
-
-
-def get_patches(patch_names):
-    patches = []
-
-    for patch in patch_names:
-        patches.append(Patch(get_patch_data(patch), patch))
-
-    return patches
-
-
-def get_patch_data(patch):
-    with open(parse_dir_keywords(
-            path.join(MAIN_SETTINGS.working_directory, MAIN_SETTINGS.patch_dir, f"{patch}.json"))) as file:
-        return json.load(file)
 
 
 class PatchType(Enum):
@@ -48,15 +33,19 @@ class Patch:
         self.patch = data["patch"]
         self.type = data["type"]
         self.name = name
+        self.pack_info = None
+        self.config = None
 
-    def run(self, pack: str, logger: logging.Logger):
+    def run(self, pack: str, logger: logging.Logger, pack_info, config):
+        self.pack_info = pack_info
+        self.config = config
         match self.type:
             case PatchType.REPLACE.value:
                 _patch_replace(pack, self, logger)
             case PatchType.REMOVE.value:
                 _patch_remove(pack, self, logger)
             case PatchType.MIXIN_JSON.value:
-                _patch_mixin_json(pack, self, logger)
+                _patch_mixin_json(pack, pack_info, self, logger)
             case PatchType.MODIFIER.value:
                 _patch_modifier(pack, self, logger)
             case _:
@@ -68,10 +57,10 @@ class PatchFile:
         self.patches = patches
         self.name = name
 
-    def run(self, pack: str, logger_name: str):
+    def run(self, pack: str, logger_name: str, pack_info, config):
         for i, patch in enumerate(self.patches, start=1):
             logger = logging.getLogger(f"{logger_name}\x1b[0m/\x1b[34m{self.name}\x1b[0m")
-            patch.run(pack, logger)
+            patch.run(pack, logger, pack_info, config)
             logger.info(f"Completed patch [{i}/{len(self.patches)}]")
 
     @staticmethod
@@ -322,8 +311,8 @@ class Mixin:
         self.modifiers = modifiers
         self.pack = pack
 
-    def run(self, logger):
-        files = self.file_selector.run(logger)
+    def run(self, pack_info, logger):
+        files = self.file_selector.run(pack_info, logger)
         for file in files:
             file_path = os.path.join(self.pack, file)
             file_data = _get_json_file(file_path)
@@ -346,13 +335,13 @@ class Mixin:
 
 
 # Allows json files to be edited
-def _patch_mixin_json(pack: str, patch: Patch, logger: logging.Logger):
+def _patch_mixin_json(pack: str, pack_info, patch: Patch, logger: logging.Logger):
     mixins = patch.patch["mixins"]
 
     for i, data in enumerate(mixins, start=1):
         mixin = Mixin.parse(data, pack)
         logger.info(f"Completed mixin [{i}/{len(mixins)}]")
-        mixin.run(logger)
+        mixin.run(pack_info, logger)
 
 
 def get_cube_direction(from_pos: Tuple[int], to_pos: Tuple[int]) -> Union[str, None]:

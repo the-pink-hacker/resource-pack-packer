@@ -35,12 +35,15 @@ class FileSelectorType(Enum):
 
 
 class FileSelector:
+    """
+    Select a collection of files from a patch file.
+    """
     def __init__(self, selector_type: str, arguments: dict, pack: str):
         self.selector_type = selector_type
         self.arguments = arguments
         self.pack = pack
 
-    def run(self, logger: logging.Logger) -> Optional[List[str]]:
+    def run(self, pack_info, logger: logging.Logger) -> Optional[List[str]]:
         match self.selector_type:
             case FileSelectorType.FILE.value:
                 return self.arguments["files"]
@@ -97,7 +100,36 @@ class FileSelector:
 
                 return parsed_models + parsed_blockstates + parsed_lang_files
             case FileSelectorType.BLOCK.value:
-                pass
+                blocks = self.arguments["blocks"]
+
+                files = []
+
+                for block in blocks:
+                    if "plural" in block:
+                        plural = block["plural"]
+                    else:
+                        plural = False
+
+                    block_plural = block["block"]
+
+                    if plural:
+                        block_single = block["block"][:-1]
+                    else:
+                        block_single = block["block"]
+
+                    parsed_block_files = []
+
+                    if pack_info.block_files is not None:
+                        for block_file in pack_info.block_files:
+                            parsed_block_file = block_file.replace("[block_name]", block_single)
+                            parsed_block_file = parsed_block_file.replace("[block_name_plural]", block_plural)
+                            parsed_block_files.append(os.path.join(self.pack, parsed_block_file))
+                    else:
+                        logger.error("block_files is not set")
+                        return
+
+                    files += parsed_block_files
+                return files
             case _:
                 logger.error(f"Incorrect file selector type: {self.selector_type}")
                 return

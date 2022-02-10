@@ -73,10 +73,10 @@ class PackInfo:
             self.description = ""
             logger.warning("Description is missing in pack info")
 
-        if check_option(data, "dev") and check_option(data["dev"], "dependencies"):
-            self.dependencies = data["dev"]["dependencies"]
+        if "selectors" in data and "block_files" in data["selectors"]:
+            self.block_files: List[str] = data["selectors"]["block_files"]
         else:
-            self.dependencies = []
+            self.block_files = None
 
         self.configs = []
 
@@ -93,12 +93,6 @@ class PackInfo:
             self.run_options = RunOptions.parse(data["run_options"])
         else:
             self.run_options = RunOptions.parse(MAIN_SETTINGS.run_options)
-
-        if check_option(data, "curseforge"):
-            self.curseforge_id = data["curseforge"]["id"]
-
-            if check_option(data["curseforge"], "changelog_type"):
-                self.curseforge_id = data["curseforge"]["changelog_type"]
 
     def get_run_option(self, name: str) -> Union["RunOptions", None]:
         for run_option in self.run_options:

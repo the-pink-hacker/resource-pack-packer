@@ -152,7 +152,7 @@ class Packer:
             logger.info(f"Applying patches...")
 
             for patch in config.patches:
-                patch.run(temp_pack_dir, logger.name)
+                patch.run(temp_pack_dir, logger.name, self.pack_info, config)
 
         # Delete Empty Folders
         if config.delete_empty_folders:
