@@ -1,0 +1,159 @@
+{
+  "$id": "https://raw.githubusercontent.com/RyanGar46/resource-pack-packer/main/schema",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "File Selector",
+  "description": "Selects a collection of files inside of a resource pack.",
+  "type": "object",
+  "properties": {
+    "type": {
+      "description": "The type of file selector.",
+      "type": "string",
+      "enum": [
+        "file",
+        "path",
+        "identifier",
+        "block"
+      ]
+    },
+    "arguments": {
+      "description": "Contains arguments for the selector.",
+      "type": "object"
+    }
+  },
+  "if": {
+    "properties": {
+      "type": {
+        "const": "file"
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "arguments": {
+        "properties": {
+          "files": {
+            "description": "A array of the selected files.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["files"]
+      }
+    }
+  },
+  "else": {
+    "if": {
+      "properties": {
+        "type": {
+          "const": "path"
+        }
+      }
+    },
+    "then": {
+      "properties": {
+        "arguments": {
+          "properties": {
+            "path": {
+              "description": "Where the files are located.",
+              "type": "string"
+            },
+            "recursive": {
+              "description": "Should files be recursively searched for in sub folders?",
+              "type": "boolean"
+            },
+            "regex": {
+              "description": "Further search through selected files with a regex pattern.",
+              "type": "string"
+            }
+          },
+          "required": ["path"]
+        }
+      }
+    },
+    "else": {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "identifier"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "arguments": {
+            "properties": {
+              "models": {
+                "description": "An array of models.",
+                "type": "array",
+                "items": {
+                  "description": "A model.",
+                  "type": "string"
+                }
+              },
+              "blocksates": {
+                "description": "An array of blockstates.",
+                "type": "array",
+                "items": {
+                  "description": "A blockstate.",
+                  "type": "string"
+                }
+              },
+              "lang": {
+                "description": "An array of lang files.",
+                "type": "array",
+                "items": {
+                  "description": "A lang file.",
+                  "type": "string"
+                }
+              }
+            },
+            "minProperties": 1
+          }
+        }
+      },
+      "else": {
+        "if": {
+          "properties": {
+            "type": {
+              "const": "block"
+            }
+          }
+        },
+        "then": {
+          "properties": {
+            "arguments": {
+              "properties": {
+                "blocks": {
+                  "description": "An array of blocks. A block is defined in the config file.",
+                  "type": "array",
+                  "items": {
+                    "description": "A block.",
+                    "type": "object",
+                    "properties": {
+                      "block": {
+                        "description": "The name of the block.",
+                        "type": "string"
+                      },
+                      "plural": {
+                        "description": "Is the block name plural?",
+                        "type": "boolean"
+                      }
+                    },
+                    "required": ["block"]
+                  }
+                }
+              },
+              "required": ["blocks"]
+            }
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "type",
+    "arguments"
+  ]
+}
