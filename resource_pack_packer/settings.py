@@ -75,7 +75,7 @@ class Settings:
             }
         }
         with open("settings.json", "w") as file:
-            json.dump(data, file, indent="2")
+            json.dump(data, file, indent=2)
 
 
 def get_settings() -> Settings:
