@@ -6,6 +6,7 @@ import shutil
 from glob import glob
 from typing import List
 
+from resource_pack_packer import settings
 from resource_pack_packer.configs import PackInfo
 from resource_pack_packer.settings import MAIN_SETTINGS
 
@@ -46,9 +47,24 @@ class Mod:
             with open(self.directory, "wb") as f:
                 shutil.copyfileobj(r.raw, f)
 
-    def install(self):
+    def install(self, pack_dir: str):
         # Install mod
         shutil.copy(self.directory, os.path.join(MAIN_SETTINGS.minecraft_dir, "mods", self.file_name))
+
+        # Extract
+        temp_dir = os.path.join(MAIN_SETTINGS.working_directory,
+                                MAIN_SETTINGS.temp_dir,
+                                f"{self.name}.{self.project}.{self.file}")
+
+        shutil.unpack_archive(self.directory, temp_dir, "zip")
+
+        # Install to dev namespace
+        for namespace in glob(os.path.join(temp_dir, "assets", "*")):
+            namespace_name = os.path.basename(namespace)
+            for asset in self.assets:
+                asset_dir = os.path.join(temp_dir, "assets", namespace_name, asset)
+                if os.path.exists(asset_dir):
+                    shutil.move(asset_dir, os.path.join(pack_dir, "assets", f"rpp-{namespace_name}", asset))
 
     @staticmethod
     def parse(data: dict) -> "Mod":
@@ -101,7 +117,7 @@ def setup():
 
     # Install
     for i, mod in enumerate(pack_info.mod_dependencies, start=1):
-        mod.install()
-        logger.info(f"Installed mod [{i}:{len(pack_info.mod_dependencies)}]: {mod.name}.{mod.project}.{mod.file}")
+        mod.install(settings.parse_dir_keywords(pack_info.directory))
+        logger.info(f"Installed mod [{i}/{len(pack_info.mod_dependencies)}]: {mod.name}.{mod.project}.{mod.file}")
 
     shutil.rmtree(os.path.join(MAIN_SETTINGS.working_directory, MAIN_SETTINGS.temp_dir))
