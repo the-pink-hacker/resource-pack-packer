@@ -32,39 +32,50 @@ def folder_dialog(title="Select Folder", directory=os.path.abspath(os.sep)):
 class Settings:
     def __init__(self):
         self.pack_folder = ""
+        self.minecraft_dir = ""
         self.temp_dir = ""
         self.out_dir = ""
         self.patch_dir = ""
         self.working_directory = ""
         self.run_options = None
+        self.curseforge_token = ""
 
     def load(self):
         with open("settings.json", "r") as file:
             data = json.load(file)
 
         try:
-            self.pack_folder = data["locations"]["pack_folder"]
+            self.minecraft_dir = data["locations"]["minecraft"]
+            self.pack_folder = os.path.join(self.minecraft_dir, "resourcepacks")
             self.temp_dir = data["locations"]["temp"]
             self.out_dir = data["locations"]["out"]
             self.patch_dir = data["locations"]["patch"]
             self.working_directory = data["locations"]["working_directory"]
             self.run_options = data["run_options"]
+
+            if "tokens" in data and "curseforge" in data["tokens"]:
+                self.curseforge_token = data["tokens"]["curseforge"]
+            else:
+                self.curseforge_token = None
         except KeyError:
             raise KeyError("Settings are incompatible. Delete settings.json file to fix.")
 
     def save(self):
         data = {
             "locations": {
-                "pack_folder": self.pack_folder,
+                "minecraft": self.minecraft_dir,
                 "temp": self.temp_dir,
                 "out": self.out_dir,
                 "patch": self.patch_dir,
                 "working_directory": self.working_directory
             },
-            "run_options": self.run_options
+            "run_options": self.run_options,
+            "tokens": {
+                "curseforge": self.curseforge_token
+            }
         }
         with open("settings.json", "w") as file:
-            json.dump(data, file, indent="\t")
+            json.dump(data, file, indent="2")
 
 
 def get_settings() -> Settings:
@@ -76,10 +87,11 @@ def get_settings() -> Settings:
     else:
         settings = Settings()
         if sys.platform == "windows":
-            settings.pack_folder = path.join(folder_dialog(title="Select Minecraft Directory", directory="%APPDATA%/.minecraft"), "resourcepacks")
+            settings.minecraft_dir = folder_dialog(title="Select Minecraft Directory", directory="%APPDATA%/.minecraft")
         else:
-            settings.pack_folder = path.join(folder_dialog(title="Select Minecraft Directory", directory="~/.minecraft"), "resourcepacks")
+            settings.minecraft_dir = folder_dialog(title="Select Minecraft Directory", directory="%APPDATA%/.minecraft")
 
+        settings.pack_folder = os.path.join(settings.minecraft_dir, "resourcepacks")
         settings.temp_dir = "temp"
         settings.out_dir = "out"
         settings.patch_dir = "patches"

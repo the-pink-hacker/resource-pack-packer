@@ -5,6 +5,7 @@ from glob import glob
 from os import path
 from typing import Union, List
 
+import resource_pack_packer.dependencies
 from resource_pack_packer.patch import PatchFile
 from resource_pack_packer.settings import MAIN_SETTINGS
 from resource_pack_packer.settings import parse_keyword
@@ -93,6 +94,13 @@ class PackInfo:
             self.run_options = RunOptions.parse(data["run_options"])
         else:
             self.run_options = RunOptions.parse(MAIN_SETTINGS.run_options)
+
+        if "dev" in data and "mod_dependencies" in data["dev"]:
+            self.mod_dependencies = []
+            for mod in data["dev"]["mod_dependencies"]:
+                self.mod_dependencies.append(resource_pack_packer.dependencies.Mod.parse(mod))
+        else:
+            self.mod_dependencies = []
 
     def get_run_option(self, name: str) -> Union["RunOptions", None]:
         for run_option in self.run_options:
