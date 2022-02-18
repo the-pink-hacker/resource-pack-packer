@@ -123,7 +123,8 @@ class FileSelector:
                         for block_file in pack_info.block_files:
                             parsed_block_file = block_file.replace("[block_name]", block_single)
                             parsed_block_file = parsed_block_file.replace("[block_name_plural]", block_plural)
-                            parsed_block_files.append(os.path.join(self.pack, parsed_block_file))
+                            if os.path.exists(os.path.join(self.pack, parsed_block_file)):
+                                parsed_block_files.append(os.path.join(self.pack, parsed_block_file))
                     else:
                         logger.error("block_files is not set")
                         return
