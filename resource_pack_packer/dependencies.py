@@ -1,5 +1,7 @@
 import logging
 import os
+from tkinter import filedialog
+
 import requests
 import shutil
 
@@ -8,12 +10,23 @@ from typing import List
 
 from resource_pack_packer import settings
 from resource_pack_packer.configs import PackInfo
-from resource_pack_packer.settings import MAIN_SETTINGS
-
+from resource_pack_packer.settings import MAIN_SETTINGS, parse_dir
 
 logger = logging.getLogger("Setup")
 
 URL_CURSEFORGE = "https://api.curseforge.com"
+
+
+def extract_jar(src: str, assets: List[str], pack_dir: str, temp_dir: str):
+    shutil.unpack_archive(src, temp_dir, "zip")
+
+    # Install to dev namespace
+    for namespace in glob(os.path.join(temp_dir, "assets", "*")):
+        namespace_name = os.path.basename(namespace)
+        for asset in assets:
+            asset_dir = os.path.join(temp_dir, "assets", namespace_name, asset)
+            if os.path.exists(asset_dir):
+                shutil.move(asset_dir, os.path.join(pack_dir, "assets", f"rpp-{namespace_name}", asset))
 
 
 class Mod:
@@ -56,15 +69,7 @@ class Mod:
                                 MAIN_SETTINGS.temp_dir,
                                 f"{self.name}.{self.project}.{self.file}")
 
-        shutil.unpack_archive(self.directory, temp_dir, "zip")
-
-        # Install to dev namespace
-        for namespace in glob(os.path.join(temp_dir, "assets", "*")):
-            namespace_name = os.path.basename(namespace)
-            for asset in self.assets:
-                asset_dir = os.path.join(temp_dir, "assets", namespace_name, asset)
-                if os.path.exists(asset_dir):
-                    shutil.move(asset_dir, os.path.join(pack_dir, "assets", f"rpp-{namespace_name}", asset))
+        extract_jar(self.directory, self.assets, pack_dir, temp_dir)
 
     @staticmethod
     def parse(data: dict) -> "Mod":
@@ -101,12 +106,14 @@ def setup():
     # Preinstall
     if os.path.exists(os.path.join(MAIN_SETTINGS.minecraft_dir, "mods")):
         if any(os.scandir(os.path.join(MAIN_SETTINGS.minecraft_dir, "mods"))):
-            mod_input = input("Mods already installed. Remove, keep, or backup? ").lower()
+            mod_input = input("Mods already installed. Remove, keep, cancel, or backup? ").lower()
             if mod_input == "remove":
                 shutil.rmtree(os.path.join(MAIN_SETTINGS.minecraft_dir, "mods"))
                 logger.info("Cleared mods")
             elif mod_input == "keep":
                 pass
+            elif mod_input == "cancel":
+                return
             else:
                 backup_dir = os.path.join(MAIN_SETTINGS.minecraft_dir, "mods-RPPBACKUP")
                 shutil.move(os.path.join(MAIN_SETTINGS.minecraft_dir, "mods"), backup_dir)
@@ -119,5 +126,16 @@ def setup():
     for i, mod in enumerate(pack_info.mod_dependencies, start=1):
         mod.install(settings.parse_dir_keywords(pack_info.directory))
         logger.info(f"Installed mod [{i}/{len(pack_info.mod_dependencies)}]: {mod.name}.{mod.project}.{mod.file}")
+
+    # Minecraft Install
+    mc_jar = parse_dir(filedialog.askopenfilename(title="Select Minecraft jar",
+                                                  initialdir=os.path.join(MAIN_SETTINGS.minecraft_dir, "versions"),
+                                                  filetypes=[("Minecraft version", "*.jar")]))
+    mc_version = os.path.basename(mc_jar)
+    extract_jar(mc_jar,
+                ["blockstates", "models", "textures"],
+                settings.parse_dir_keywords(pack_info.directory),
+                os.path.join(MAIN_SETTINGS.working_directory, MAIN_SETTINGS.temp_dir, f"minecraft - {mc_version}"))
+    logger.info(f"Installed Minecraft: {mc_version}")
 
     shutil.rmtree(os.path.join(MAIN_SETTINGS.working_directory, MAIN_SETTINGS.temp_dir))
