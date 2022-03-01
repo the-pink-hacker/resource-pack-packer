@@ -1,12 +1,14 @@
+import json
 import logging
 import os
+import zipfile
 from tkinter import filedialog
 
 import requests
 import shutil
 
 from glob import glob
-from typing import List
+from typing import List, Union
 
 from resource_pack_packer import settings
 from resource_pack_packer.configs import PackInfo
@@ -17,33 +19,64 @@ logger = logging.getLogger("Setup")
 URL_CURSEFORGE = "https://api.curseforge.com"
 
 
-def extract_jar(src: str, assets: List[str], pack_dir: str, temp_dir: str):
-    shutil.unpack_archive(src, temp_dir, "zip")
+def update_cache(value: Union[str, List[str]], src: str):
+    cache_data = {
+        "cache": []
+    }
+    # Cache file exists
+    if os.path.exists(src):
+        with open(src, "r") as file:
+            cache_data = json.load(file)
 
-    # Install to dev namespace
-    for namespace in glob(os.path.join(temp_dir, "assets", "*")):
-        namespace_name = os.path.basename(namespace)
-        for asset in assets:
-            asset_dir = os.path.join(temp_dir, "assets", namespace_name, asset)
-            if os.path.exists(asset_dir):
-                shutil.move(asset_dir, os.path.join(pack_dir, "assets", f"rpp-{namespace_name}", asset))
+    # Add to cache with duplicates
+    if isinstance(value, str):
+        cache_set = set(cache_data["cache"])
+        cache_set.add(value)
+        cache_data["cache"] = list(set(cache_data["cache"]) | cache_set)
+    elif isinstance(value, list):
+        cache_data["cache"] = list(set(cache_data["cache"]) | set(value))
+
+    with open(src, "w", encoding="utf-8") as file:
+        json.dump(cache_data, file, ensure_ascii=False, indent=2)
+
+
+def check_cache(value: str, src: str) -> bool:
+    if os.path.exists(src):
+        with open(src, "r") as file:
+            cache_data = json.load(file)
+            if value in cache_data["cache"]:
+                return True
+    return False
+
+
+def extract_jar(src: str, mc_version: str):
+    out_dir = os.path.join(MAIN_SETTINGS.working_directory, "dev", mc_version)
+    with zipfile.ZipFile(src) as jar:
+        for file in jar.namelist():
+            if file.startswith("assets"):
+                jar.extract(file, out_dir)
 
 
 class Mod:
-    def __init__(self, name: str, project: int, file: int, assets: List[str]):
+    def __init__(self, name: str, project: int, file: int):
         self.name = name
         self.project = project
         self.file = file
-        self.assets = assets
         self.directory = ""
         self.file_name = ""
 
-    def download(self):
-        temp = os.path.join(MAIN_SETTINGS.working_directory, MAIN_SETTINGS.temp_dir)
+    def download(self, mod_cache: str) -> bool:
+        download_dir = os.path.join(MAIN_SETTINGS.working_directory, "dev", "src")
+        self.file_name = f"{self.name}.{self.project}.{self.file}.jar"
+        self.directory = os.path.join(download_dir, self.file_name)
+
+        # Check if mod is already downloaded
+        if check_cache(f"{self.name}.{self.project}.{self.file}", mod_cache):
+            return False
 
         # Make dirs
-        if not os.path.exists(temp):
-            os.makedirs(temp)
+        if not os.path.exists(download_dir):
+            os.makedirs(download_dir)
 
         # Download file
         # Get download link
@@ -54,34 +87,29 @@ class Mod:
 
         download_url = r.json()["data"]
 
-        self.file_name = f"{self.name}.{self.project}.{self.file}.jar"
-        self.directory = os.path.join(temp, self.file_name)
         with requests.get(download_url, stream=True) as r:
             with open(self.directory, "wb") as f:
                 shutil.copyfileobj(r.raw, f)
 
-    def install(self, pack_dir: str):
+        return True
+
+    def install(self, mc_version: str):
         # Install mod
-        shutil.copy(self.directory, os.path.join(MAIN_SETTINGS.minecraft_dir, "mods", self.file_name))
+        if not os.path.exists(os.path.join(MAIN_SETTINGS.minecraft_dir, "mods", self.file_name)):
+            shutil.copy(self.directory, os.path.join(MAIN_SETTINGS.minecraft_dir, "mods", self.file_name))
 
-        # Extract
-        temp_dir = os.path.join(MAIN_SETTINGS.working_directory,
-                                MAIN_SETTINGS.temp_dir,
-                                f"{self.name}.{self.project}.{self.file}")
-
-        extract_jar(self.directory, self.assets, pack_dir, temp_dir)
+        extract_jar(self.directory, mc_version)
 
     @staticmethod
     def parse(data: dict) -> "Mod":
-        if "assets" in data:
-            assets = data["assets"]
-        else:
-            assets = []
-
-        return Mod(data["name"], data["project"], data["file"], assets)
+        return Mod(data["name"], data["project"], data["file"])
 
 
 def setup():
+    if MAIN_SETTINGS.curseforge_token is None:
+        logger.error("Token not provided")
+        return
+
     # Pack info
     config_files = glob(os.path.join(MAIN_SETTINGS.working_directory, "configs", "*"))
     config_files_string = ""
@@ -94,14 +122,21 @@ def setup():
         logger.error("No dependencies found")
         return
 
-    if MAIN_SETTINGS.curseforge_token is None:
-        logger.error("Token not provided")
-        return
+    # Minecraft version
+    mc_jar = parse_dir(filedialog.askopenfilename(title="Select Minecraft jar",
+                                                  initialdir=os.path.join(MAIN_SETTINGS.minecraft_dir, "versions"),
+                                                  filetypes=[("Minecraft version", "*.jar")]))
+    mc_version = os.path.basename(mc_jar).replace(".jar", "")
+
+    mod_cache = os.path.join(MAIN_SETTINGS.working_directory, "dev", mc_version, "cache.json")
 
     # Download
     for i, mod in enumerate(pack_info.mod_dependencies, start=1):
-        mod.download()
-        logger.info(f"Downloaded mod [{i}/{len(pack_info.mod_dependencies)}]: {mod.name}")
+        downloaded = mod.download(mod_cache)
+        if downloaded:
+            logger.info(f"Downloaded mod [{i}/{len(pack_info.mod_dependencies)}]: {mod.name}")
+        else:
+            logger.info(f"Already downloaded mod [{i}/{len(pack_info.mod_dependencies)}]: {mod.name}")
 
     # Preinstall
     if os.path.exists(os.path.join(MAIN_SETTINGS.minecraft_dir, "mods")):
@@ -122,20 +157,22 @@ def setup():
     if not os.path.exists(os.path.join(MAIN_SETTINGS.minecraft_dir, "mods")):
         os.makedirs(os.path.join(MAIN_SETTINGS.minecraft_dir, "mods"))
 
+    # Clear dependencies
+    if os.path.exists(os.path.join(MAIN_SETTINGS.working_directory, "dev", mc_version, "assets")):
+        shutil.rmtree(os.path.join(MAIN_SETTINGS.working_directory, "dev", mc_version, "assets"))
+
     # Install
+    mods = []
     for i, mod in enumerate(pack_info.mod_dependencies, start=1):
-        mod.install(settings.parse_dir_keywords(pack_info.directory))
-        logger.info(f"Installed mod [{i}/{len(pack_info.mod_dependencies)}]: {mod.name}.{mod.project}.{mod.file}")
+        name = f"{mod.name}.{mod.project}.{mod.file}"
+        mods.append(name)
+        mod.install(mc_version)
+        logger.info(f"Installed mod [{i}/{len(pack_info.mod_dependencies)}]: {name}")
 
-    # Minecraft Install
-    mc_jar = parse_dir(filedialog.askopenfilename(title="Select Minecraft jar",
-                                                  initialdir=os.path.join(MAIN_SETTINGS.minecraft_dir, "versions"),
-                                                  filetypes=[("Minecraft version", "*.jar")]))
-    mc_version = os.path.basename(mc_jar)
-    extract_jar(mc_jar,
-                ["blockstates", "models", "textures"],
-                settings.parse_dir_keywords(pack_info.directory),
-                os.path.join(MAIN_SETTINGS.working_directory, MAIN_SETTINGS.temp_dir, f"minecraft - {mc_version}"))
+    # Update mod cache
+    if mods:
+        update_cache(mods, mod_cache)
+
+    # Minecraft install
+    extract_jar(mc_jar, mc_version)
     logger.info(f"Installed Minecraft: {mc_version}")
-
-    shutil.rmtree(os.path.join(MAIN_SETTINGS.working_directory, MAIN_SETTINGS.temp_dir))
