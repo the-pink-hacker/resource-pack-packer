@@ -62,10 +62,7 @@
                 }
               } 
             },
-            "required": [
-              "delete",
-              "ignore"
-            ]
+            "required": ["delete"]
           },
           "pack_format": {
             "description": "The pack format. If left unset, it will be set based off of the Minecraft version.",
@@ -87,10 +84,7 @@
             }
           }
         },
-        "required": [
-          "mc_versions",
-          "textures"
-        ]
+        "required": ["mc_versions"]
       }
     }
   },

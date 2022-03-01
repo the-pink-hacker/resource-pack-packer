@@ -130,8 +130,17 @@ class Config:
         self.name = name
         self.mc_version = config["mc_versions"][0]
         self.mc_versions = config["mc_versions"]
-        self.delete_textures = config["textures"]["delete"]
-        self.ignore_textures = config["textures"]["ignore"]
+
+        if "textures" in config:
+            self.delete_textures = config["textures"]["delete"]
+
+            if "ignore" in config["textures"]:
+                self.ignore_textures = config["textures"]["ignore"]
+            else:
+                self.ignore_textures = []
+        else:
+            self.delete_textures = False
+            self.ignore_textures = []
 
         self.delete_empty_folders = False
 
