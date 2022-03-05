@@ -12,6 +12,7 @@ from typing import Union
 
 from resource_pack_packer.configs import PackInfo, parse_name_scheme_keywords, Config, RunOptions
 from resource_pack_packer.settings import MAIN_SETTINGS, parse_dir_keywords
+from resource_pack_packer.socket import socket_json_run
 
 
 def zip_dir(src, dest):
@@ -42,6 +43,8 @@ class Packer:
         self.PATCH_DIR = parse_dir_keywords(os.path.join(MAIN_SETTINGS.working_directory, MAIN_SETTINGS.patch_dir))
 
         self.PACK_OVERRIDE = pack is not None
+
+        self.debugger_connected = False
 
         if self.PACK_OVERRIDE:
             self.pack = pack
@@ -104,8 +107,16 @@ class Packer:
 
         # Rerun
         if self.run_option.rerun:
-            input("\nPress enter to rerun...")
-            self.start(selected_pack_name, selected_run_option)
+            if not self.debugger_connected:
+                rerun = input("\nPress enter to rerun... (enter \"connect\" to connect to debugger) ")
+                if rerun.lower() == "connect":
+                    self.debugger_connected = True
+                    socket_json_run("rerun", lambda args: self.start(args[0], args[1]), [selected_pack_name, selected_run_option])
+                else:
+                    self.start(selected_pack_name, selected_run_option)
+            else:
+                self.logger.info("Waiting for debugger...")
+                socket_json_run("rerun", lambda args: self.start(args[0], args[1]), [selected_pack_name, selected_run_option])
 
     def _pack(self, config: Config):
         pack_name = parse_name_scheme_keywords(self.pack_info.name_scheme, path.basename(self.pack_dir), self.version,
