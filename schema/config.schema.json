@@ -86,6 +86,45 @@
         },
         "required": ["mc_versions"]
       }
+    },
+    "dev": {
+      "description": "Settings related to the development of a pack.",
+      "type": "object",
+      "properties": {
+        "dependencies": {
+          "description": "Dependents necessary for the development of the pack.",
+          "type": "object",
+          "properties": {
+            "curseforge": {
+              "description": "Required curseforge mods.",
+              "type": "array",
+              "items": {
+                "description": "A curseforge mod.",
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "description": "The slug of the project.",
+                    "type": "string"
+                  },
+                  "project": {
+                    "description": "The project ID.",
+                    "type": "integer"
+                  },
+                  "file": {
+                    "description": "The file ID.",
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "name",
+                  "project",
+                  "file"
+                ]
+              }
+            }
+          }
+        }
+      }
     }
   },
   "required": [
