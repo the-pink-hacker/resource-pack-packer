@@ -118,7 +118,7 @@ def setup():
 
     pack_info = PackInfo.parse(input(f"Choose pack:\n{config_files_string}\n"))
 
-    if not pack_info.mod_dependencies:
+    if not pack_info.curseforge_dependencies:
         logger.error("No dependencies found")
         return
 
@@ -131,12 +131,12 @@ def setup():
     mod_cache = os.path.join(MAIN_SETTINGS.working_directory, "dev", mc_version, "cache.json")
 
     # Download
-    for i, mod in enumerate(pack_info.mod_dependencies, start=1):
+    for i, mod in enumerate(pack_info.curseforge_dependencies, start=1):
         downloaded = mod.download(mod_cache)
         if downloaded:
-            logger.info(f"Downloaded mod [{i}/{len(pack_info.mod_dependencies)}]: {mod.name}")
+            logger.info(f"Downloaded mod [{i}/{len(pack_info.curseforge_dependencies)}]: {mod.name}")
         else:
-            logger.info(f"Already downloaded mod [{i}/{len(pack_info.mod_dependencies)}]: {mod.name}")
+            logger.info(f"Already downloaded mod [{i}/{len(pack_info.curseforge_dependencies)}]: {mod.name}")
 
     # Preinstall
     if os.path.exists(os.path.join(MAIN_SETTINGS.minecraft_dir, "mods")):
@@ -163,11 +163,11 @@ def setup():
 
     # Install
     mods = []
-    for i, mod in enumerate(pack_info.mod_dependencies, start=1):
+    for i, mod in enumerate(pack_info.curseforge_dependencies, start=1):
         name = f"{mod.name}.{mod.project}.{mod.file}"
         mods.append(name)
         mod.install(mc_version)
-        logger.info(f"Installed mod [{i}/{len(pack_info.mod_dependencies)}]: {name}")
+        logger.info(f"Installed mod [{i}/{len(pack_info.curseforge_dependencies)}]: {name}")
 
     # Update mod cache
     if mods:

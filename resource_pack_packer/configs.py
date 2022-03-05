@@ -95,12 +95,12 @@ class PackInfo:
         else:
             self.run_options = RunOptions.parse(MAIN_SETTINGS.run_options)
 
-        if "dev" in data and "mod_dependencies" in data["dev"]:
-            self.mod_dependencies = []
-            for mod in data["dev"]["mod_dependencies"]:
-                self.mod_dependencies.append(resource_pack_packer.dependencies.Mod.parse(mod))
+        if "dev" in data and "dependencies" in data["dev"] and "curseforge" in data["dev"]["dependencies"]:
+            self.curseforge_dependencies = []
+            for mod in data["dev"]["dependencies"]["curseforge"]:
+                self.curseforge_dependencies.append(resource_pack_packer.dependencies.Mod.parse(mod))
         else:
-            self.mod_dependencies = []
+            self.curseforge_dependencies = []
 
     def get_run_option(self, name: str) -> Union["RunOptions", None]:
         for run_option in self.run_options:
