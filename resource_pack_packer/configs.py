@@ -3,9 +3,10 @@ import logging
 import os
 from glob import glob
 from os import path
-from typing import Union, List
+from typing import Union, List, Optional
 
 import resource_pack_packer.dependencies
+from resource_pack_packer.console import choose_from_list
 from resource_pack_packer.patch import PatchFile
 from resource_pack_packer.settings import MAIN_SETTINGS
 from resource_pack_packer.settings import parse_keyword
@@ -102,20 +103,10 @@ class PackInfo:
         else:
             self.curseforge_dependencies = []
 
-    def get_run_option(self, name: str) -> Union["RunOptions", None]:
-        for run_option in self.run_options:
-            if run_option.name == name:
-                return run_option
-        # Default run options
-        for run_option in MAIN_SETTINGS.run_options:
-            if run_option.name == name:
-                return run_option
-        return None
-
     @staticmethod
-    def parse(pack_name: str) -> Union["PackInfo", None]:
+    def parse(pack_name: str) -> Optional["PackInfo"]:
         logger = logging.getLogger(pack_name)
-        file_directory = path.join(MAIN_SETTINGS.working_directory, "configs", f"{pack_name}.json")
+        file_directory = path.join(MAIN_SETTINGS.working_directory, "configs", pack_name)
         if os.path.exists(file_directory):
             with open(file_directory, "r") as file:
                 data = json.load(file)
@@ -188,10 +179,13 @@ class Config:
             logging.warning(f"Couldn't find correct pack format for: '{self.mc_version}'. Defaulting to: {pack_format}")
         return pack_format
 
+    def __str__(self) -> str:
+        return self.name
+
 
 class RunOptions:
     def __init__(self, name: str, configs: Union[List[str], str], minify_json: bool, delete_empty_folders: bool,
-                 zip_pack: bool, out_dir: str, version: Union[str, None], rerun: bool):
+                 zip_pack: bool, out_dir: str, version: Optional[str], rerun: bool):
         self.name = name
         self.configs = configs
         self.minify_json = minify_json
@@ -201,8 +195,7 @@ class RunOptions:
         self.version = version
         self.rerun = rerun
 
-    def get_configs(self, configs: List[Config], logger: logging.Logger) -> Union[
-                    List[Config], None]:
+    def get_configs(self, configs: List[Config], logger: logging.Logger) -> Optional[List[Config]]:
         selected_configs = []
 
         # All configs
@@ -210,13 +203,8 @@ class RunOptions:
             selected_configs = configs
         # Select config
         elif self.configs == "?":
-            config_list = ""
-            for config in configs:
-                config_list += f"- {config.name}\n"
-            name = input(f"Select Config:\n{config_list}\n")
-            for config in configs:
-                if config.name == name:
-                    selected_configs.append(config)
+            selected, index = choose_from_list(configs, "Select Config:")
+            selected_configs.append(selected)
         # List of configs
         elif isinstance(self.configs, list) and len(self.configs) > 0:
             for name in self.configs:
@@ -258,3 +246,6 @@ class RunOptions:
                 rerun
             ))
         return run_options
+
+    def __str__(self) -> str:
+        return self.name

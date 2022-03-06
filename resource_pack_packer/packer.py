@@ -8,9 +8,10 @@ from multiprocessing import pool
 from os import path
 from threading import Thread
 from timeit import default_timer
-from typing import Union
+from typing import Optional, List
 
 from resource_pack_packer.configs import PackInfo, parse_name_scheme_keywords, Config, RunOptions
+from resource_pack_packer.console import choose_from_list
 from resource_pack_packer.settings import MAIN_SETTINGS, parse_dir_keywords
 from resource_pack_packer.socket import socket_json_run
 
@@ -36,7 +37,6 @@ def minify_json(directory):
 
 class Packer:
     def __init__(self, pack=None, parent=None):
-        self.configs: Union[str, None] = None
         self.PACK_FOLDER_DIR = MAIN_SETTINGS.pack_folder
         self.TEMP_DIR = parse_dir_keywords(os.path.join(MAIN_SETTINGS.working_directory, MAIN_SETTINGS.temp_dir))
         self.OUT_DIR = parse_dir_keywords(os.path.join(MAIN_SETTINGS.working_directory, MAIN_SETTINGS.out_dir))
@@ -46,6 +46,12 @@ class Packer:
 
         self.debugger_connected = False
 
+        self.pack_info: Optional[PackInfo] = None
+        self.pack_dir: Optional[str] = None
+        self.version: Optional[str] = None
+        self.run_option: Optional[RunOptions] = None
+        self.configs: Optional[List[Config]] = None
+
         if self.PACK_OVERRIDE:
             self.pack = pack
             self.parent = parent
@@ -54,17 +60,17 @@ class Packer:
 
         self.logger = logging.getLogger("Packing")
 
-    def start(self, pack_overide: Union[str, None] = None, run_option_overide: Union[str, None] = None):
+    def start(self, pack_override: Optional[str] = None, run_option_override: Optional[int] = None):
         # Pack info
         config_files = glob(path.join(MAIN_SETTINGS.working_directory, "configs", "*"))
-        config_files_string = ""
-        for config in config_files:
-            config_files_string += f"- {os.path.basename(config.split('.')[0])}\n"
+        config_file_names = []
+        for file in config_files:
+            config_file_names.append(os.path.basename(file))
 
-        if pack_overide is None:
-            selected_pack_name = input(f"Choose pack:\n{config_files_string}\n")
+        if pack_override is None:
+            selected_pack_name = choose_from_list(config_file_names, "Choose pack:")[0]
         else:
-            selected_pack_name = pack_overide
+            selected_pack_name = pack_override
 
         self.pack_info = PackInfo.parse(selected_pack_name)
         self.pack_dir = parse_dir_keywords(self.pack_info.directory)
@@ -72,15 +78,11 @@ class Packer:
         self.logger.info(f"Located Pack: {self.pack_dir}")
 
         # Run options
-        run_options_string = ""
-        for run_option in self.pack_info.run_options:
-            run_options_string += f"- {run_option.name}\n"
-        if run_option_overide is None:
-            selected_run_option = input(f"Choose run option:\n{run_options_string}\n")
+        if run_option_override is None:
+            self.run_option, selected_run_option = choose_from_list(self.pack_info.run_options, "Choose run option:")
         else:
-            selected_run_option = run_option_overide
-
-        self.run_option = self.pack_info.get_run_option(selected_run_option)
+            self.run_option = self.pack_info.run_options[run_option_override]
+            selected_run_option = run_option_override
 
         if self.run_option.version is not None:
             self.version = self.run_option.version
@@ -111,12 +113,16 @@ class Packer:
                 rerun = input("\nPress enter to rerun... (enter \"connect\" to connect to debugger) ")
                 if rerun.lower() == "connect":
                     self.debugger_connected = True
-                    socket_json_run("rerun", lambda args: self.start(args[0], args[1]), [selected_pack_name, selected_run_option])
+                    socket_json_run("rerun",
+                                    lambda args: self.start(args[0], args[1]),
+                                    [selected_pack_name, selected_run_option])
                 else:
                     self.start(selected_pack_name, selected_run_option)
             else:
                 self.logger.info("Waiting for debugger...")
-                socket_json_run("rerun", lambda args: self.start(args[0], args[1]), [selected_pack_name, selected_run_option])
+                socket_json_run("rerun",
+                                lambda args: self.start(args[0], args[1]),
+                                [selected_pack_name, selected_run_option])
 
     def _pack(self, config: Config):
         pack_name = parse_name_scheme_keywords(self.pack_info.name_scheme, path.basename(self.pack_dir), self.version,
