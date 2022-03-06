@@ -60,7 +60,7 @@ class Packer:
 
         self.logger = logging.getLogger("Packing")
 
-    def start(self, pack_override: Optional[str] = None, run_option_override: Optional[int] = None):
+    def start(self, pack_override: Optional[str] = None, run_option_override: Optional[int] = None, config_override: Optional[List[int]] = None):
         # Pack info
         config_files = glob(path.join(MAIN_SETTINGS.working_directory, "configs", "*"))
         config_file_names = []
@@ -90,7 +90,10 @@ class Packer:
             self.version = input("Resource pack version: ")
 
         # Config
-        self.configs = self.run_option.get_configs(self.pack_info.configs, self.logger)
+        if config_override is None:
+            self.configs, config_override = self.run_option.get_configs(self.pack_info.configs, self.logger)
+        else:
+            self.configs = self.run_option.get_configs(self.pack_info.configs, self.logger, config_override)[0]
 
         # Pack
         if self.run_option.out_dir == MAIN_SETTINGS.out_dir:
@@ -114,15 +117,15 @@ class Packer:
                 if rerun.lower() == "connect":
                     self.debugger_connected = True
                     socket_json_run("rerun",
-                                    lambda args: self.start(args[0], args[1]),
-                                    [selected_pack_name, selected_run_option])
+                                    lambda args: self.start(args[0], args[1], args[2]),
+                                    [selected_pack_name, selected_run_option, config_override])
                 else:
-                    self.start(selected_pack_name, selected_run_option)
+                    self.start(selected_pack_name, selected_run_option, config_override)
             else:
                 self.logger.info("Waiting for debugger...")
                 socket_json_run("rerun",
-                                lambda args: self.start(args[0], args[1]),
-                                [selected_pack_name, selected_run_option])
+                                lambda args: self.start(args[0], args[1], args[2]),
+                                [selected_pack_name, selected_run_option, config_override])
 
     def _pack(self, config: Config):
         pack_name = parse_name_scheme_keywords(self.pack_info.name_scheme, path.basename(self.pack_dir), self.version,

@@ -3,7 +3,7 @@ import logging
 import os
 from glob import glob
 from os import path
-from typing import Union, List, Optional
+from typing import Union, List, Optional, Tuple
 
 import resource_pack_packer.dependencies
 from resource_pack_packer.console import choose_from_list
@@ -195,26 +195,37 @@ class RunOptions:
         self.version = version
         self.rerun = rerun
 
-    def get_configs(self, configs: List[Config], logger: logging.Logger) -> Optional[List[Config]]:
+    def get_configs(self, configs: List[Config], logger: logging.Logger, config_override: Union[List[int], str, None] = None) -> Tuple[List[Config], List[int]]:
         selected_configs = []
+        selected_config_indexes = []
 
-        # All configs
-        if self.configs == "*":
-            selected_configs = configs
-        # Select config
-        elif self.configs == "?":
-            selected, index = choose_from_list(configs, "Select Config:")
-            selected_configs.append(selected)
-        # List of configs
-        elif isinstance(self.configs, list) and len(self.configs) > 0:
-            for name in self.configs:
-                for config in configs:
-                    if config.name == name:
-                        selected_configs.append(config)
+        if config_override is None:
+            # All configs
+            if self.configs == "*":
+                selected_configs = configs
+                selected_config_indexes = "*"
+            # Select config
+            elif self.configs == "?":
+                selected, i = choose_from_list(configs, "Select Config:")
+                selected_configs.append(selected)
+                selected_config_indexes.append(i)
+            # List of configs
+            elif isinstance(self.configs, list) and len(self.configs) > 0:
+                for i, config in enumerate(configs):
+                    for name in self.configs:
+                        if config.name == name:
+                            selected_configs.append(config)
+                            selected_config_indexes.append(i)
+            else:
+                logger.warning(f"couldn't find config(s): {self.configs}")
         else:
-            logger.warning(f"couldn't find config(s): {self.configs}")
-            return None
-        return selected_configs
+            if isinstance(config_override, list):
+                for item in config_override:
+                    selected_configs.append(configs[item])
+            elif config_override == "*":
+                selected_configs = configs
+            selected_config_indexes = config_override
+        return selected_configs, selected_config_indexes
 
     @staticmethod
     def parse(data: dict) -> List["RunOptions"]:
