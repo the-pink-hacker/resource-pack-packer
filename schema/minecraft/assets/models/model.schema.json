@@ -1,0 +1,251 @@
+{
+  "$id": "https://raw.githubusercontent.com/RyanGar46/resource-pack-packer/main/schema/assets/blockstates",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "A blockstate asset.",
+  "properties": {
+    "parent": {
+      "description": "Loads a different model from the given path, in form of a resource location. If both \"parent\" and \"elements\" are set, the \"elements\" tag overrides the \"elements\" tag from the previous model.",
+      "type": "string"
+    },
+    "ambientocclusion": {
+      "description": "Whether to use ambient occlusion (true - default), or not (false).",
+      "type": "boolean",
+      "default": true
+    },
+    "display": {
+      "description": "Holds the different places where item models are displayed.",
+      "type": "object",
+      "properties": {
+        "thirdperson_righthand": {
+          "$ref": "#/definitions/displayPosition"
+        },
+        "thirdperson_lefthand": {
+          "$ref": "#/definitions/displayPosition"
+        },
+        "firstperson_righthand": {
+          "$ref": "#/definitions/displayPosition"
+        },
+        "firstperson_lefthand": {
+          "$ref": "#/definitions/displayPosition"
+        },
+        "gui": {
+          "$ref": "#/definitions/displayPosition"
+        },
+        "head": {
+          "$ref": "#/definitions/displayPosition"
+        },
+        "ground": {
+          "$ref": "#/definitions/displayPosition"
+        },
+        "fixed": {
+          "$ref": "#/definitions/displayPosition"
+        }
+      }
+    },
+    "textures": {
+      "description": "Holds the textures of the model, in form of a resource location or can be another texture variable.",
+      "type": "object",
+      "properties": {
+        "particle": {
+          "description": "What texture to load particles from.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": {
+        "title": "Texture Variable",
+        "description": "Defines a texture variable and assigns a texture.",
+        "type": "string"
+      }
+    },
+    "elements": {
+      "description": "Contains all the elements of the model. They can have only cubic forms. If both \"parent\" and \"elements\" are set, the \"elements\" tag overrides the \"elements\" tag from the previous model.",
+      "type": "array",
+      "items": {
+        "title": "An Element",
+        "properties": {
+          "from": {
+            "$ref": "#/definitions/vector3",
+            "description": "Start point of a cuboid according to the scheme [x, y, z]. Values must be between -16 and 32.",
+            "items": {
+              "minimum": -16.0,
+              "maximum": 32.0
+            }
+          },
+          "to": {
+            "$ref": "#/definitions/vector3",
+            "description": "Stop point of a cuboid according to the scheme [x, y, z]. Values must be between -16 and 32.",
+            "items": {
+              "minimum": -16.0,
+              "maximum": 32.0
+            }
+          },
+          "rotation": {
+            "description": "Defines the rotation of an element.",
+            "properties": {
+              "origin": {
+                "$ref": "#/definitions/vector3",
+                "description": "Sets the center of the rotation according to the scheme [x, y, z]."
+              },
+              "axis": {
+                "description": "Specifies the direction of rotation, can be \"x\", \"y\" or \"z\".",
+                "type": "string",
+                "enum": [
+                  "x",
+                  "y",
+                  "z"
+                ]
+              },
+              "angle": {
+                "description": "Specifies the angle of rotation. Can be 45 through -45 degrees in 22.5 degree increments.",
+                "type": "number",
+                "minimum": -45,
+                "maximum": 45,
+                "multipleOf": 22.5
+              },
+              "rescale": {
+                "description": "Specifies whether or not to scale the faces across the whole block. Can be true or false. Defaults to false.",
+                "type": "boolean",
+                "default": false
+              }
+            },
+            "required": [
+              "origin",
+              "axis",
+              "angle"
+            ]
+          },
+          "shade": {
+            "description": "Defines if shadows are rendered (true - default), not (false).",
+            "type": "boolean",
+            "default": true
+          },
+          "faces": {
+            "description": "Holds all the faces of the cuboid. If a face is left out, it does not render.",
+            "type": "object",
+            "properties": {
+              "north": {
+                "$ref": "#/definitions/cubeFace"
+              },
+              "easy": {
+                "$ref": "#/definitions/cubeFace"
+              },
+              "south": {
+                "$ref": "#/definitions/cubeFace"
+              },
+              "west": {
+                "$ref": "#/definitions/cubeFace"
+              },
+              "up": {
+                "$ref": "#/definitions/cubeFace"
+              },
+              "down": {
+                "$ref": "#/definitions/cubeFace"
+              }
+            },
+            "minProperties": 1
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "faces"
+        ]
+      }
+    }
+  },
+  "minProperties": 1,
+  "definitions": {
+    "displayPosition": {
+      "title": "Position",
+      "description": "Named thirdperson_righthand, thirdperson_lefthand, firstperson_righthand, firstperson_lefthand, gui, head, ground, or fixed. Place where an item model is displayed. Holds its rotation, translation and scale for the specified situation. fixed refers to item frames, while the rest are as their name states. Note that translations are applied to the model before rotations.",
+      "type": "object",
+      "properties": {
+        "rotation": {
+          "$ref": "#/definitions/vector3",
+          "description": "Specifies the rotation of the model according to the scheme [x, y, z]."
+        },
+        "translation": {
+          "$ref": "#/definitions/vector3",
+          "description": "Specifies the position of the model according to the scheme [x, y, z]. The values are clamped between -80 and 80.",
+          "items": {
+            "minimum": -80.0,
+            "maximum": 80.0
+          }
+        },
+        "scale": {
+          "$ref": "#/definitions/vector3",
+          "description": "Specifies the scale of the model according to the scheme [x, y, z]. If the value is greater than 4, it is displayed as 4.",
+          "items": {
+            "minimum": 0.0,
+            "maximum": 4.0
+          }
+        }
+      }
+    },
+    "vector3": {
+      "type": "array",
+      "items": {
+        "type": "number",
+        "default": 0.0
+      },
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "vector4": {
+      "type": "array",
+      "items": {
+        "type": "number",
+        "default": 0.0
+      },
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "cubeFace": {
+      "title": "Face",
+      "description": "Named down, up, north, south, west or east. Contains the properties of the specified face.",
+      "properties": {
+        "uv": {
+          "$ref": "#/definitions/vector4",
+          "description": "Defines the area of the texture to use according to the scheme [x1, y1, x2, y2]. If unset, it defaults to values equal to xyz position of the element. The texture behavior is inconsistent if UV extends below 0 or above 16. If the numbers of x1 and x2 are swapped (e.g. from 0, 0, 16, 16 to 16, 0, 0, 16), the texture flips. UV is optional, and if not supplied it automatically generates based on the element's position.",
+          "items": {
+            "minimum": 0.0,
+            "maximum": 16.0
+          }
+        },
+        "texture": {
+          "description": "Specifies the texture in form of the texture variable prepended with a #.",
+          "type": "string"
+        },
+        "cullface": {
+          "description": "Specifies whether a face does not need to be rendered when there is a block touching it in the specified position. The position can be: down, up, north, south, west, or east. It also determines the side of the block to use the light level from for lighting the face, and if unset, defaults to the side. bottom may also be used in the latest versions instead of down, despite appearing only once in the actual game assets.",
+          "type": "string",
+          "enum": [
+            "north",
+            "east",
+            "south",
+            "west",
+            "up",
+            "down"
+          ]
+        },
+        "rotation": {
+          "description": "Rotates the texture by the specified number of degrees. Can be 0, 90, 180, or 270. Defaults to 0. Rotation does not affect which part of the texture is used. Instead, it amounts to permutation of the selected texture vertexes (selected implicitly, or explicitly though uv).",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 270,
+          "multipleOf": 90,
+          "default": 0
+        },
+        "tintindex": {
+          "description": "Determines whether to tint the texture using a hardcoded tint index. The default value, -1, indicates not to use the tint. Any other number is provided to BlockColors to get the tint value corresponding to that index. However, most blocks do not have a tint value defined (in which case white is used). Furthermore, no vanilla block currently uses multiple tint values, and thus the tint index value is ignored (as long as it is set to something other than -1); it could be used for modded blocks that need multiple distinct tint values in the same block though.",
+          "type": "integer",
+          "default": -1
+        }
+      },
+      "required": [
+        "uv",
+        "texture"
+      ]
+    }
+  }
+}

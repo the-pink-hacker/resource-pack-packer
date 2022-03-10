@@ -1,7 +1,0 @@
-{
-  "$id": "https://raw.githubusercontent.com/RyanGar46/resource-pack-packer/main/schema/assets/blockstates",
-  "$schema": "http://json-schema.org/draft-07/schema",
-  "title": "State",
-  "description": "Name of a block state. A single case that has to match one of the block states. It can be set to a list separated by | to allow multiple values to match. Cannot be set alongside the OR-tag.",
-  "type": "string"
-}
