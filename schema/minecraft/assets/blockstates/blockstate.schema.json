@@ -1,0 +1,95 @@
+{
+  "$id": "https://raw.githubusercontent.com/RyanGar46/resource-pack-packer/main/schema/assets/blockstates",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "A blockstate asset.",
+  "description": "A Minecraft asset that determines what model should be used for a block.",
+  "type": "object",
+  "oneOf": [
+    {
+      "properties": {
+        "variants": {
+          "description": "Holds the names of all the variants of the block.",
+          "type": "object",
+          "additionalProperties": {
+            "title": "A Variant",
+            "description": "Name of a variant, which consists of the relevant block states separated by commas. A block with just one variant uses \"\" as a name for its variant. Each variant can have one model or an array of models and contains their properties. If set to an array, the model is chosen randomly from the options given, with each option being specified in separate subsidiary -tags. Item frames are treated as blocks and use \"map=false\" for a map-less item frame, and \"map=true\" for item frames with maps.",
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "blockstate_model.schema.json"
+                }
+              },
+              {
+                "$ref": "blockstate_model.schema.json"
+              }
+            ]
+          }
+        }
+      },
+      "required": ["variants"]
+    },
+    {
+      "properties": {
+        "multipart": {
+          "description": "Used instead of variants to combine models based on block state attributes.",
+          "type": "array",
+          "items": {
+            "title": "A Case",
+            "description": "Determines a case and the model that should apply in that case.",
+            "properties": {
+              "when": {
+                "description": "A list of cases that have to be met for the model to be applied. If unset, the model always applies.",
+                "type": "object",
+                "oneOf": [
+                  {
+                    "properties": {
+                      "OR": {
+                        "description": "Matches if any of the contained cases return true. Cannot be set alongside other cases. ",
+                        "type": "array",
+                        "items": {
+                          "title": "A Condition",
+                          "description": "A list of cases that all have to match the block to return true.",
+                          "type": "object",
+                          "additionalProperties": {
+                            "$ref": "blockstate_state.schema.json"
+                          }
+                        }
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "additionalProperties": {
+                      "$ref": "blockstate_state.schema.json"
+                    }
+                  }
+                ]
+              },
+              "apply": {
+                "description": "Determines the model(s) to apply and its properties. There can be one model or an array of models. If set to an array, the model is chosen randomly from the options given, with each option being specified in separate subsidiary -tags.",
+                "oneOf": [
+                  {
+                    "type": "array",
+                    "items": {
+                      "$ref": "blockstate_model.schema.json"
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "$ref": "blockstate_model.schema.json"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "when",
+              "apply"
+            ]
+          }
+        }
+      },
+      "required": ["multipart"]
+    }
+  ]
+}

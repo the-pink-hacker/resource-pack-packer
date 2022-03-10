@@ -1,0 +1,35 @@
+{
+  "$id": "https://raw.githubusercontent.com/RyanGar46/resource-pack-packer/main/schema/assets/blockstates",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "A Model",
+  "description": "Contains the properties of a model, if more than one model is used for the same variant. All specified models alternate in the game.",
+  "type": "object",
+  "properties": {
+    "model": {
+      "description": "Specifies the path to the model file of the block, in form of a resource location.",
+      "type": "string"
+    },
+    "x": {
+      "description": "Rotation of the model on the x-axis in increments of 90 degrees.",
+      "type": "integer",
+      "default": 0,
+      "multipleOf": 90
+    },
+    "y": {
+      "description": "Rotation of the model on the y-axis in increments of 90 degrees.",
+      "default": 0,
+      "multipleOf": 90
+    },
+    "uvlock": {
+      "description": "Can be true or false (default). Locks the rotation of the texture of a block, if set to true. This way the texture does not rotate with the block when using the x and y-tags above.",
+      "type": "boolean",
+      "default": false
+    },
+    "weight": {
+      "description": "Sets the probability of the model for being used in the game, defaults to 1 (=100%). If more than one model is used for the same variant, the probability is calculated by dividing the individual model's weight by the sum of the weights of all models. (For example, if three models are used with weights 1, 1, and 2, then their combined weight would be 4 (1+1+2). The probability of each model being used would then be determined by dividing each weight by 4: 1/4, 1/4 and 2/4, or 25%, 25% and 50%, respectively.)",
+      "type": "integer",
+      "default": 1
+    }
+  },
+  "required": ["model"]
+}
