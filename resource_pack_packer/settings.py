@@ -104,7 +104,8 @@ def get_settings() -> Settings:
                 "zip_pack": False,
                 "out_dir": "#packdir",
                 "version": "DEV",
-                "rerun": True
+                "rerun": True,
+                "validate": True
             },
             "build": {
               "configs": "*",

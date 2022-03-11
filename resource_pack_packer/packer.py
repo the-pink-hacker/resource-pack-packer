@@ -14,6 +14,7 @@ from resource_pack_packer.configs import PackInfo, parse_name_scheme_keywords, C
 from resource_pack_packer.console import choose_from_list
 from resource_pack_packer.settings import MAIN_SETTINGS, parse_dir_keywords
 from resource_pack_packer.socket import socket_json_run
+from resource_pack_packer.validation import validate
 
 
 def zip_dir(src, dest):
@@ -188,6 +189,10 @@ class Packer:
             output = path.normpath(path.join(self.OUT_DIR, pack_name + ".zip"))
             zip_dir(temp_pack_dir, output)
             logger.info(f"Completed pack: {output}")
+
+        if self.run_option.validate:
+            self.logger.info(f"Validating {config}...")
+            validate(temp_pack_dir)
 
     def _copy_pack(self, src: str, dest: str):
         files = glob(path.join(src, "**"), recursive=True)

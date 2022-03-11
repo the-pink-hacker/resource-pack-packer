@@ -185,7 +185,7 @@ class Config:
 
 class RunOptions:
     def __init__(self, name: str, configs: Union[List[str], str], minify_json: bool, delete_empty_folders: bool,
-                 zip_pack: bool, out_dir: str, version: Optional[str], rerun: bool):
+                 zip_pack: bool, out_dir: str, version: Optional[str], rerun: bool, validate: bool):
         self.name = name
         self.configs = configs
         self.minify_json = minify_json
@@ -194,6 +194,7 @@ class RunOptions:
         self.out_dir = out_dir
         self.version = version
         self.rerun = rerun
+        self.validate = validate
 
     def get_configs(self, configs: List[Config], logger: logging.Logger, config_override: Union[List[int], str, None] = None) -> Tuple[List[Config], List[int]]:
         selected_configs = []
@@ -246,6 +247,11 @@ class RunOptions:
             else:
                 rerun = False
 
+            if "validate" in value:
+                validate = value["validate"]
+            else:
+                validate = False
+
             run_options.append(RunOptions(
                 key,
                 value["configs"],
@@ -254,7 +260,8 @@ class RunOptions:
                 value["zip_pack"],
                 out_dir,
                 version,
-                rerun
+                rerun,
+                validate
             ))
         return run_options
 
