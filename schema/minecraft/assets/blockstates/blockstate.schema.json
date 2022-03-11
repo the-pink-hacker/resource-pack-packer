@@ -82,10 +82,7 @@
                 ]
               }
             },
-            "required": [
-              "when",
-              "apply"
-            ]
+            "required": ["apply"]
           }
         }
       },
@@ -129,7 +126,10 @@
     "state": {
       "title": "State",
       "description": "Name of a block state. A single case that has to match one of the block states. It can be set to a list separated by | to allow multiple values to match. Cannot be set alongside the OR-tag.",
-      "type": "string"
+      "type": [
+        "boolean",
+        "string"
+      ]
     }
   }
 }

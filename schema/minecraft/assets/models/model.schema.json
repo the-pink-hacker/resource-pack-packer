@@ -242,10 +242,7 @@
           "default": -1
         }
       },
-      "required": [
-        "uv",
-        "texture"
-      ]
+      "required": ["texture"]
     }
   }
 }

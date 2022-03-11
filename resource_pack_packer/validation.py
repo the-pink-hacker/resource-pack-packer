@@ -8,6 +8,7 @@ import jsonschema
 
 def validate(pack: str):
     assets_dir = os.path.join(pack, "assets", "*")
+    validate_assets(os.path.join(assets_dir, "blockstates", "**"), "json", "minecraft/assets/blockstates/blockstate.schema.json")
     validate_assets(os.path.join(assets_dir, "models", "**"), "json", "minecraft/assets/models/model.schema.json")
 
 
