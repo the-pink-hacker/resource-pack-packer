@@ -69,7 +69,7 @@ class Packer:
             config_file_names.append(os.path.basename(file))
 
         if pack_override is None:
-            selected_pack_name = choose_from_list(config_file_names, "Choose pack:")[0]
+            selected_pack_name = choose_from_list(config_file_names, "Select pack:")[0]
         else:
             selected_pack_name = pack_override
 
@@ -80,7 +80,7 @@ class Packer:
 
         # Run options
         if run_option_override is None:
-            self.run_option, selected_run_option = choose_from_list(self.pack_info.run_options, "Choose run option:")
+            self.run_option, selected_run_option = choose_from_list(self.pack_info.run_options, "Select run option:")
         else:
             self.run_option = self.pack_info.run_options[run_option_override]
             selected_run_option = run_option_override

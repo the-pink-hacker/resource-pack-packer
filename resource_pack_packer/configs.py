@@ -96,13 +96,6 @@ class PackInfo:
         else:
             self.run_options = RunOptions.parse(MAIN_SETTINGS.run_options)
 
-        if "dev" in data and "dependencies" in data["dev"] and "curseforge" in data["dev"]["dependencies"]:
-            self.curseforge_dependencies = []
-            for mod in data["dev"]["dependencies"]["curseforge"]:
-                self.curseforge_dependencies.append(resource_pack_packer.dependencies.Mod.parse(mod))
-        else:
-            self.curseforge_dependencies = []
-
     @staticmethod
     def parse(pack_name: str) -> Optional["PackInfo"]:
         logger = logging.getLogger(pack_name)
@@ -119,8 +112,12 @@ class PackInfo:
 class Config:
     def __init__(self, config: dict, name: str, logger: logging.Logger):
         self.name = name
-        self.mc_version = config["mc_versions"][0]
+
         self.mc_versions = config["mc_versions"]
+        self.mc_versions.sort()
+        self.mc_versions.reverse()
+
+        self.mc_version = config["mc_versions"][0]
 
         if "textures" in config:
             self.delete_textures = config["textures"]["delete"]
@@ -155,6 +152,13 @@ class Config:
                 self.patches.append(PatchFile.parse_file(
                     os.path.join(MAIN_SETTINGS.working_directory, MAIN_SETTINGS.patch_dir, f"{patch}.json"), patch,
                     logger))
+
+        if "dependencies" in config and "curseforge" in config["dependencies"]:
+            self.curseforge_dependencies = []
+            for mod in config["dependencies"]["curseforge"]:
+                self.curseforge_dependencies.append(resource_pack_packer.dependencies.Mod.parse(mod))
+        else:
+            self.curseforge_dependencies = []
 
     def get_auto_pack_format(self) -> int:
         version = int(self.mc_version.split(".")[1])
@@ -207,7 +211,7 @@ class RunOptions:
                 selected_config_indexes = "*"
             # Select config
             elif self.configs == "?":
-                selected, i = choose_from_list(configs, "Select Config:")
+                selected, i = choose_from_list(configs, "Select config:")
                 selected_configs.append(selected)
                 selected_config_indexes.append(i)
             # List of configs

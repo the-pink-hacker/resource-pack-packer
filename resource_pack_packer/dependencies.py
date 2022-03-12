@@ -106,6 +106,18 @@ class Mod:
         return Mod(data["name"], data["project"], data["file"])
 
 
+class MinecraftVersion(tuple):
+    def __new__(cls, *args):
+        if isinstance(args[0], list):
+            version_list = args[0]
+            if len(version_list) == 3:
+                return tuple(version_list)
+            elif len(version_list) == 2:
+                return version_list[0], version_list[1], 0
+            elif len(version_list) == 1:
+                return version_list[0], 0, 0
+
+
 def setup():
     if MAIN_SETTINGS.curseforge_token is None:
         logger.error("Token not provided")
@@ -117,28 +129,41 @@ def setup():
     for file in config_files:
         config_file_names.append(os.path.basename(file))
 
-    selected_pack_name = choose_from_list(config_file_names, "Choose pack:")[0]
+    selected_pack_name = choose_from_list(config_file_names, "Select pack:")[0]
     pack_info = PackInfo.parse(selected_pack_name)
+    config = choose_from_list(pack_info.configs, "Select config")[0]
 
-    if not pack_info.curseforge_dependencies:
+    if not config.curseforge_dependencies:
         logger.error("No dependencies found")
         return
 
     # Minecraft version
-    mc_jar = parse_dir(filedialog.askopenfilename(title="Select Minecraft jar",
-                                                  initialdir=os.path.join(MAIN_SETTINGS.minecraft_dir, "versions"),
-                                                  filetypes=[("Minecraft version", "*.jar")]))
+    mc_jar = None
+    for version in config.mc_versions:
+        parsed_version = MinecraftVersion(version.split("."))
+        mc_jar_unchecked = os.path.join(MAIN_SETTINGS.minecraft_dir, "versions", version, f"{version}.jar")
+        # Version installed
+        if os.path.exists(mc_jar_unchecked) and os.path.isfile(mc_jar_unchecked):
+            mc_jar = mc_jar_unchecked
+            break
+
+    if mc_jar is None:
+        logger.warning(f"Minecraft versions couldn't be found: {', '.join(config.mc_versions)}")
+        return
+
+    print(mc_jar)
+
     mc_version = os.path.basename(mc_jar).replace(".jar", "")
 
     mod_cache = os.path.join(MAIN_SETTINGS.working_directory, "dev", mc_version, "cache.json")
 
     # Download
-    for i, mod in enumerate(pack_info.curseforge_dependencies, start=1):
+    for i, mod in enumerate(config.curseforge_dependencies, start=1):
         downloaded = mod.download(mod_cache)
         if downloaded:
-            logger.info(f"Downloaded mod [{i}/{len(pack_info.curseforge_dependencies)}]: {mod.name}")
+            logger.info(f"Downloaded mod [{i}/{len(config.curseforge_dependencies)}]: {mod.name}")
         else:
-            logger.info(f"Already downloaded mod [{i}/{len(pack_info.curseforge_dependencies)}]: {mod.name}")
+            logger.info(f"Already downloaded mod [{i}/{len(config.curseforge_dependencies)}]: {mod.name}")
 
     # Preinstall
     if os.path.exists(os.path.join(MAIN_SETTINGS.minecraft_dir, "mods")):
@@ -163,18 +188,18 @@ def setup():
     if os.path.exists(os.path.join(MAIN_SETTINGS.working_directory, "dev", mc_version, "assets")):
         shutil.rmtree(os.path.join(MAIN_SETTINGS.working_directory, "dev", mc_version, "assets"))
 
+    # Minecraft install
+    extract_jar(mc_jar, mc_version)
+    logger.info(f"Installed Minecraft: {mc_version}")
+
     # Install
     mods = []
-    for i, mod in enumerate(pack_info.curseforge_dependencies, start=1):
+    for i, mod in enumerate(config.curseforge_dependencies, start=1):
         name = f"{mod.name}.{mod.project}.{mod.file}"
         mods.append(name)
         mod.install(mc_version)
-        logger.info(f"Installed mod [{i}/{len(pack_info.curseforge_dependencies)}]: {name}")
+        logger.info(f"Installed mod [{i}/{len(config.curseforge_dependencies)}]: {name}")
 
     # Update mod cache
     if mods:
         update_cache(mods, mod_cache)
-
-    # Minecraft install
-    extract_jar(mc_jar, mc_version)
-    logger.info(f"Installed Minecraft: {mc_version}")
