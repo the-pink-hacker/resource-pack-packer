@@ -12,6 +12,7 @@ from typing import List, Union
 
 from resource_pack_packer import settings
 from resource_pack_packer.configs import PackInfo
+from resource_pack_packer.console import choose_from_list
 from resource_pack_packer.settings import MAIN_SETTINGS, parse_dir
 
 logger = logging.getLogger("Setup")
@@ -112,11 +113,12 @@ def setup():
 
     # Pack info
     config_files = glob(os.path.join(MAIN_SETTINGS.working_directory, "configs", "*"))
-    config_files_string = ""
-    for config in config_files:
-        config_files_string += f"- {os.path.basename(config.split('.')[0])}\n"
+    config_file_names = []
+    for file in config_files:
+        config_file_names.append(os.path.basename(file))
 
-    pack_info = PackInfo.parse(input(f"Choose pack:\n{config_files_string}\n"))
+    selected_pack_name = choose_from_list(config_file_names, "Choose pack:")[0]
+    pack_info = PackInfo.parse(selected_pack_name)
 
     if not pack_info.curseforge_dependencies:
         logger.error("No dependencies found")
