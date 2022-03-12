@@ -18,6 +18,7 @@ from resource_pack_packer.settings import MAIN_SETTINGS, parse_dir
 logger = logging.getLogger("Setup")
 
 URL_CURSEFORGE = "https://api.curseforge.com"
+URL_MINECRAFT_VERSION_INDEX = "https://launchermeta.mojang.com/mc/game/version_manifest_v2.json"
 
 
 def update_cache(value: Union[str, List[str]], src: str):
@@ -58,6 +59,15 @@ def extract_jar(src: str, mc_version: str):
                 jar.extract(file, out_dir)
 
 
+def download_file(url: str, dest: str):
+    if not os.path.exists(os.path.dirname(dest)):
+        os.makedirs(os.path.dirname(dest))
+
+    with requests.get(url, stream=True) as r:
+        with open(dest, "wb") as f:
+            shutil.copyfileobj(r.raw, f)
+
+
 class Mod:
     def __init__(self, name: str, project: int, file: int):
         self.name = name
@@ -75,10 +85,6 @@ class Mod:
         if check_cache(f"{self.name}.{self.project}.{self.file}", mod_cache):
             return False
 
-        # Make dirs
-        if not os.path.exists(download_dir):
-            os.makedirs(download_dir)
-
         # Download file
         # Get download link
         r = requests.get(f"{URL_CURSEFORGE}/v1/mods/{self.project}/files/{self.file}/download-url", headers={
@@ -87,10 +93,7 @@ class Mod:
         })
 
         download_url = r.json()["data"]
-
-        with requests.get(download_url, stream=True) as r:
-            with open(self.directory, "wb") as f:
-                shutil.copyfileobj(r.raw, f)
+        download_file(download_url, self.directory)
 
         return True
 
@@ -106,16 +109,13 @@ class Mod:
         return Mod(data["name"], data["project"], data["file"])
 
 
-class MinecraftVersion(tuple):
-    def __new__(cls, *args):
-        if isinstance(args[0], list):
-            version_list = args[0]
-            if len(version_list) == 3:
-                return tuple(version_list)
-            elif len(version_list) == 2:
-                return version_list[0], version_list[1], 0
-            elif len(version_list) == 1:
-                return version_list[0], 0, 0
+def install_version_from_index(index_dir: str) -> str:
+    with open(index_dir, "r") as index_file:
+        data = json.load(index_file)
+    version_url = data["downloads"]["client"]["url"]
+    out_dir = os.path.join(index_dir.replace(".json", ".jar"))
+    download_file(version_url, out_dir)
+    return out_dir
 
 
 def setup():
@@ -139,19 +139,39 @@ def setup():
 
     # Minecraft version
     mc_jar = None
+    # Check for installed versions
     for version in config.mc_versions:
-        parsed_version = MinecraftVersion(version.split("."))
         mc_jar_unchecked = os.path.join(MAIN_SETTINGS.minecraft_dir, "versions", version, f"{version}.jar")
         # Version installed
         if os.path.exists(mc_jar_unchecked) and os.path.isfile(mc_jar_unchecked):
             mc_jar = mc_jar_unchecked
             break
 
+    # Install if version not installed
     if mc_jar is None:
-        logger.warning(f"Minecraft versions couldn't be found: {', '.join(config.mc_versions)}")
-        return
+        # Check if index for versions are preset
+        for version in config.mc_versions:
+            version_index = os.path.join(MAIN_SETTINGS.minecraft_dir, "versions", version, f"{version}.json")
+            if os.path.exists(version_index):
+                mc_jar = install_version_from_index(version_index)
+                logger.info(f"Installed Minecraft: {version}")
+                break
 
-    print(mc_jar)
+        # If no versions can be found
+        if mc_jar is None:
+            version_manifest = requests.get(URL_MINECRAFT_VERSION_INDEX, headers={"accept": "application/json"}).json()
+            version_index = None
+            for version in version_manifest["versions"]:
+                if version["id"] == config.mc_version:
+                    version_index = version["url"]
+                    break
+            if version_index is not None:
+                index_dir = os.path.join(MAIN_SETTINGS.minecraft_dir, "versions", config.mc_version, f"{config.mc_version}.json")
+                download_file(version_index, index_dir)
+                mc_jar = install_version_from_index(index_dir)
+                logger.info(f"Installed Minecraft: {config.mc_version}")
+            else:
+                logger.error(f"Version could not be found: {config.mc_version}")
 
     mc_version = os.path.basename(mc_jar).replace(".jar", "")
 
