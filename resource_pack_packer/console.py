@@ -1,3 +1,4 @@
+import logging
 from typing import Tuple, Optional
 
 
@@ -24,3 +25,7 @@ def choose_from_list(items: list, title: Optional[str] = None) -> Tuple[any, int
         for i, item in enumerate(items):
             if item == selected:
                 return item, i
+
+
+def add_to_logger_name(logger_name: str, title: str):
+    return logging.getLogger(f"{logger_name}\x1b[0m/\x1b[34m{title}\x1b[0m")
