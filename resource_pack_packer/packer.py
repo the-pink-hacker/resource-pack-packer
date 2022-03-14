@@ -191,8 +191,8 @@ class Packer:
             logger.info(f"Completed pack: {output}")
 
         if self.run_option.validate:
-            self.logger.info(f"Validating {config}...")
-            validate(temp_pack_dir)
+            logger.info(f"Validating...")
+            validate(temp_pack_dir, logger.name)
 
     def _copy_pack(self, src: str, dest: str):
         files = glob(path.join(src, "**"), recursive=True)
