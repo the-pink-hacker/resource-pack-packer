@@ -2,6 +2,7 @@ import json
 import logging
 import os
 from glob import glob
+from multiprocessing import Pool
 
 import jsonschema
 
@@ -14,25 +15,32 @@ def validate(pack: str, logger_name: str):
     assets_dir = os.path.join(pack, "assets", "*")
 
     logger.info("Validating blockstates...")
-    blockstate_errors = validate_assets(os.path.join(assets_dir, "blockstates", "**"), "json", "minecraft/assets/blockstates/blockstate.schema.json", logger)
-    logger.info(f"Validated blockstates. Errors: {blockstate_errors}")
+    validate_assets(os.path.join(assets_dir, "blockstates", "**"), "json",
+                    "minecraft/assets/blockstates/blockstate.schema.json", logger)
+    logger.info("Validated blockstates.")
 
     logger.info("Validating models...")
-    model_errors = validate_assets(os.path.join(assets_dir, "models", "**"), "json", "minecraft/assets/models/model.schema.json", logger)
-    logger.info(f"Validated models. Errors: {model_errors}")
+    validate_assets(os.path.join(assets_dir, "models", "**"), "json", "minecraft/assets/models/model.schema.json",
+                    logger)
+    logger.info("Validated models.")
 
-    validate_asset(os.path.join(assets_dir, "sounds.json"), "minecraft/assets/models/model.schema.json", logger)
+    validate_asset(os.path.join(assets_dir, "sounds.json"), get_schema("minecraft/assets/models/model.schema.json"),
+                   logger)
 
 
-def validate_asset(file: str, schema: str, logger: logging.Logger) -> bool:
+def get_schema(schema: str) -> dict:
+    with open(os.path.join("schema", schema), "r") as raw_schema:
+        parsed_schema = json.load(raw_schema)
+    return parsed_schema
+
+
+def validate_asset(file: str, schema: dict, logger: logging.Logger) -> bool:
     if os.path.exists(file):
         with open(file, "r") as raw_data:
             data = json.load(raw_data)
-        with open(os.path.join("schema", schema), "r") as raw_schema:
-            parsed_schema = json.load(raw_schema)
 
         try:
-            jsonschema.validate(data, parsed_schema)
+            jsonschema.validate(data, schema)
             return True
         except jsonschema.ValidationError as e:
             logger.warning(f"{file} didn't match schema:\n{e.message}")
@@ -40,12 +48,18 @@ def validate_asset(file: str, schema: str, logger: logging.Logger) -> bool:
     return True
 
 
-def validate_assets(folder: str, extension: str, schema: str, logger: logging.Logger) -> int:
+def validate_assets(folder: str, extension: str, schema: str, logger: logging.Logger):
     files = glob(folder, recursive=True)
-    errors = 0
+    parsed_schema = get_schema(schema)
+    filtered_files = []
+
     for file in files:
-        if os.path.isfile(file):
-            if file.endswith(f".{extension}"):
-                if not validate_asset(file, schema, logger):
-                    errors += 1
-    return errors
+        if os.path.isfile(file) and file.endswith(f".{extension}"):
+            filtered_files.append([file, parsed_schema, logger])
+
+    with Pool(processes=os.cpu_count()) as p:
+        p.map(_validate_assets, filtered_files)
+
+
+def _validate_assets(arg: list):
+    validate_asset(arg[0], arg[1], arg[2])
