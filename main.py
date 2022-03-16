@@ -1,4 +1,5 @@
 import logging
+import math
 import os
 
 from resource_pack_packer import dependencies
@@ -18,7 +19,7 @@ def main():
 
     logger.info(f"Working Dir: {MAIN_SETTINGS.working_directory}")
 
-    run_type = choose_from_list(["run", "workdir", "setup"])[0]
+    run_type = choose_from_list(["run", "workdir", "setup", "close"])[0]
     if run_type == "run":
         packer = Packer()
         packer.start()
@@ -28,6 +29,9 @@ def main():
         main()
     elif run_type == "setup":
         dependencies.setup()
+    elif run_type == "close":
+        return
+    main()
 
 
 if __name__ == "__main__":

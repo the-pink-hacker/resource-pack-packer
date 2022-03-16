@@ -113,20 +113,9 @@ class Packer:
 
         # Rerun
         if self.run_option.rerun:
-            if not self.debugger_connected:
-                rerun = input("\nPress enter to rerun... (enter \"connect\" to connect to debugger) ")
-                if rerun.lower() == "connect":
-                    self.debugger_connected = True
-                    socket_json_run("rerun",
-                                    lambda args: self.start(args[0], args[1], args[2]),
-                                    [selected_pack_name, selected_run_option, config_override])
-                else:
-                    self.start(selected_pack_name, selected_run_option, config_override)
-            else:
-                self.logger.info("Waiting for debugger...")
-                socket_json_run("rerun",
-                                lambda args: self.start(args[0], args[1], args[2]),
-                                [selected_pack_name, selected_run_option, config_override])
+            completion_input = choose_from_list(["rerun", "close"], "Waiting for input...")[0]
+            if completion_input == "rerun":
+                self.start(selected_pack_name, selected_run_option, config_override)
 
     def _pack(self, config: Config):
         pack_name = parse_name_scheme_keywords(self.pack_info.name_scheme, path.basename(self.pack_dir), self.version,
