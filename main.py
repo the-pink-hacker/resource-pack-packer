@@ -1,5 +1,4 @@
 import logging
-import math
 import os
 
 from resource_pack_packer import dependencies
@@ -10,7 +9,7 @@ from resource_pack_packer.settings import MAIN_SETTINGS, folder_dialog
 
 def main():
     logging.basicConfig(
-        format="[\x1b[32m%(asctime)s\x1b[0m] | [\x1b[34m%(name)s\x1b[0m] [\x1b[33m%(levelname)s\x1b[0m] | \x1b[36m%(message)s\x1b[0m",
+        format="[\x1b[32m%(asctime)s\x1b[0m] [\x1b[34m%(name)s\x1b[0m] [\x1b[33m%(levelname)s\x1b[0m] \x1b[36m%(message)s\x1b[0m",
         datefmt="%H:%M:%S",
         level=logging.INFO
     )

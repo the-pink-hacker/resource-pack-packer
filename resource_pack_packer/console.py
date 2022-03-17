@@ -2,6 +2,13 @@ import logging
 from typing import Tuple, Optional
 
 
+def input_log(prompt: str) -> str:
+    logger = logging.getLogger("INPUT")
+    for line in prompt.splitlines():
+        logger.info(line)
+    return input()
+
+
 def choose_from_list(items: list, title: Optional[str] = None) -> Tuple[any, int]:
     """
     Asks the use to pick between the provided list
@@ -15,7 +22,7 @@ def choose_from_list(items: list, title: Optional[str] = None) -> Tuple[any, int
         options = ""
     for i, item in enumerate(items, start=1):
         options += f"[{i}] - {str(item)}\n"
-    selected = input(options)
+    selected = input_log(options)
 
     if selected == "":
         return items[0], 0

@@ -11,7 +11,7 @@ from timeit import default_timer
 from typing import Optional, List
 
 from resource_pack_packer.configs import PackInfo, parse_name_scheme_keywords, Config, RunOptions
-from resource_pack_packer.console import choose_from_list
+from resource_pack_packer.console import choose_from_list, input_log
 from resource_pack_packer.settings import MAIN_SETTINGS, parse_dir_keywords
 from resource_pack_packer.socket import socket_json_run
 from resource_pack_packer.validation import validate
@@ -88,7 +88,7 @@ class Packer:
         if self.run_option.version is not None:
             self.version = self.run_option.version
         else:
-            self.version = input("Resource pack version: ")
+            self.version = input_log("Resource pack version:")
 
         # Config
         if config_override is None:
