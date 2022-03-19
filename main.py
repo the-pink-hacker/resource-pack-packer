@@ -36,7 +36,7 @@ def main():
 
     # Command line
     if args.workdir is not None:
-        MAIN_SETTINGS.working_directory = parse_dir(args.workdir[0])
+        MAIN_SETTINGS.set_property("locations", "working_directory", parse_dir(args.workdir[0]))
         MAIN_SETTINGS.save()
         return
     elif args.build or args.setup:
@@ -59,14 +59,14 @@ def main():
         if args.close:
             return
 
-    logger.info(f"Working Dir: {MAIN_SETTINGS.working_directory}")
+    logger.info(f"Working Dir: {MAIN_SETTINGS.get_property('locations', 'working_directory')}")
 
     run_type = choose_from_list(["build", "workdir", "setup", "close"])[0]
     if run_type == "build":
         Packer().start()
     elif run_type == "workdir":
-        MAIN_SETTINGS.working_directory = folder_dialog("Select Working Directory: ", os.path.abspath(
-            os.path.join(MAIN_SETTINGS.working_directory, os.pardir)))
+        parent_folder = os.path.join(MAIN_SETTINGS.get_property("locations", "working_directory"), os.pardir)
+        MAIN_SETTINGS.set_property("locations", "working_directory", folder_dialog("Select Working Directory: ", parent_folder))
         MAIN_SETTINGS.save()
         main()
     elif run_type == "setup":

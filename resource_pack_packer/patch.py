@@ -135,7 +135,7 @@ def _get_json_file(file_dir: str) -> dict:
 
 def _set_json_file(file_dir: str, data: dict):
     if path.isfile(file_dir) and path.exists(file_dir):
-        with open(file_dir, "w") as file:
+        with open(file_dir, "w", encoding="utf-8") as file:
             json.dump(data, file, ensure_ascii=False, indent="\t")
 
 
@@ -429,7 +429,7 @@ def _patch_modifier(pack: str, pack_info, patch: Patch, logger: logging.Logger):
                             element["to"] = position_to
                         new_elements.append(element)
                     model_data["elements"] = new_elements
-                    with open(model, "w") as file:
+                    with open(model, "w", encoding="utf-8") as file:
                         json.dump(model_data, file, indent="\t")
                 else:
                     logger.error(f"file lacks elements: {model}")

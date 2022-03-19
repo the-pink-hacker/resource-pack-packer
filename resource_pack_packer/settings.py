@@ -1,8 +1,6 @@
 import json
 import logging
-import os.path
-import sys
-from os import path
+import os
 import tkinter
 from tkinter import filedialog
 
@@ -11,14 +9,16 @@ from resource_pack_packer.console import parse_dir
 root = tkinter.Tk()
 root.withdraw()
 
+logger = logging.getLogger("SETTINGS")
+
 
 def parse_keyword(directory, keyword, variable):
-    return path.normpath(directory.replace(f"#{keyword}", variable))
+    return os.path.normpath(directory.replace(f"#{keyword}", variable))
 
 
 def parse_dir_keywords(directory):
-    directory = parse_keyword(directory, "packdir", MAIN_SETTINGS.pack_folder)
-    directory = parse_keyword(directory, "workdir", MAIN_SETTINGS.working_directory)
+    directory = parse_keyword(directory, "packdir", os.path.join(MAIN_SETTINGS.get_property("locations", "minecraft"), "resourcepacks"))
+    directory = parse_keyword(directory, "workdir", MAIN_SETTINGS.get_property("locations", "working_directory"))
     return parse_dir(directory)
 
 
@@ -28,98 +28,106 @@ def folder_dialog(title="Select Folder", directory=os.path.abspath(os.sep)):
 
 
 class Settings:
-    def __init__(self):
-        self.pack_folder = ""
-        self.minecraft_dir = ""
-        self.temp_dir = ""
-        self.out_dir = ""
-        self.patch_dir = ""
-        self.working_directory = ""
-        self.run_options = None
-        self.curseforge_token = ""
+    def __init__(self, version):
+        self._properties = {}
+        self.add_property("meta", "version", version)
 
-    def load(self):
-        with open("settings.json", "r") as file:
-            data = json.load(file)
+    def add_property(self, group: str, key: str, default=None):
+        """
+        Add a property to be stored in the settings
+        :param group: A section of properties
+        :param key: The name of the property
+        :param default: The default value of the property
+        """
+        if group in self._properties:
+            self._properties[group] |= {key: default}
+        else:
+            self._properties |= {group: {key: default}}
 
-        try:
-            self.minecraft_dir = data["locations"]["minecraft"]
-            self.pack_folder = os.path.join(self.minecraft_dir, "resourcepacks")
-            self.temp_dir = data["locations"]["temp"]
-            self.out_dir = data["locations"]["out"]
-            self.patch_dir = data["locations"]["patch"]
-            self.working_directory = data["locations"]["working_directory"]
-            self.run_options = data["run_options"]
+    def set_property(self, group: str, key: str, value):
+        """
+        Set the value of a property
+        :param group: A section of properties
+        :param key: The name of the property
+        :param value: The value that the property will be set to
+        """
+        self._properties[group][key] = value
 
-            if "tokens" in data and "curseforge" in data["tokens"]:
-                self.curseforge_token = data["tokens"]["curseforge"]
+    def get_property(self, group: str, key: str):
+        """
+        Get the value of a property
+        :param group: A section of properties
+        :param key: The name of the property
+        :return: The value stored in the property
+        """
+        if group in self._properties:
+            if key in self._properties[group]:
+                return self._properties[group][key]
             else:
-                self.curseforge_token = None
-        except KeyError:
-            raise KeyError("Settings are incompatible. Delete settings.json file to fix.")
+                raise AttributeError(f"No property called '{key}' in '{group}'")
+        else:
+            raise AttributeError(f"No properties in {group}")
+
+    def get_group(self, group: str):
+        """
+        Get the value of a property
+        :param group: A section of properties
+        :return: The value stored in the property
+        """
+        if group in self._properties:
+            return self._properties[group]
+        else:
+            raise AttributeError(f"No properties in {group}")
 
     def save(self):
-        data = {
-            "locations": {
-                "minecraft": self.minecraft_dir,
-                "temp": self.temp_dir,
-                "out": self.out_dir,
-                "patch": self.patch_dir,
-                "working_directory": self.working_directory
-            },
-            "run_options": self.run_options,
-            "tokens": {
-                "curseforge": self.curseforge_token
-            }
-        }
-        with open("settings.json", "w") as file:
-            json.dump(data, file, indent=2)
+        with open("settings.json", "w", encoding="utf-8") as file:
+            json.dump(self._properties, file, ensure_ascii=False, indent=2)
+        logger.info(f"Saved settings to {os.path.abspath('settings.json')}")
+
+    def load(self):
+        if os.path.exists("settings.json"):
+            with open("settings.json", "r") as file:
+                settings_file = json.load(file)
+            for group, properties in settings_file.items():
+                for key, value in properties.items():
+                    self.add_property(group, key, value)
 
 
-def get_settings() -> Settings:
-    # Check if settings file has been created
-    if path.exists("settings.json"):
-        settings = Settings()
-        settings.load()
-        return settings
-    else:
-        settings = Settings()
-        if sys.platform == "windows":
-            settings.minecraft_dir = folder_dialog(title="Select Minecraft Directory", directory="%APPDATA%/.minecraft")
-        else:
-            settings.minecraft_dir = folder_dialog(title="Select Minecraft Directory", directory="%APPDATA%/.minecraft")
+MAIN_SETTINGS = Settings(0)
 
-        settings.pack_folder = os.path.join(settings.minecraft_dir, "resourcepacks")
-        settings.temp_dir = "temp"
-        settings.out_dir = "out"
-        settings.patch_dir = "patches"
-        settings.working_directory = folder_dialog(title="Select Working Directory", directory="~/Documents")
-        settings.run_options = {
-            "dev": {
-                "configs": "?",
-                "minify_json": False,
-                "delete_empty_folders": False,
-                "zip_pack": False,
-                "out_dir": "#packdir",
-                "version": "DEV",
-                "rerun": True,
-                "validate": True
-            },
-            "build": {
-              "configs": "*",
-              "minify_json": True,
-              "delete_empty_folders": True,
-              "zip_pack": True
-            },
-            "build_single": {
-              "configs": "?",
-              "minify_json": True,
-              "delete_empty_folders": True,
-              "zip_pack": True
-            }
-        }
-        settings.save()
-        return settings
+# Locations
+MAIN_SETTINGS.add_property("locations", "minecraft")
+MAIN_SETTINGS.add_property("locations", "temp", "temp")
+MAIN_SETTINGS.add_property("locations", "out", "out")
+MAIN_SETTINGS.add_property("locations", "working_directory")
 
+# Run options
+MAIN_SETTINGS.add_property("run_options", "dev", {
+    "configs": "?",
+    "minify_json": False,
+    "delete_empty_folders": False,
+    "zip_pack": False,
+    "out_dir": "#packdir",
+    "version": "DEV",
+    "rerun": True,
+    "validate": True
+})
+MAIN_SETTINGS.add_property("run_options", "build", {
+    "configs": "*",
+    "minify_json": True,
+    "delete_empty_folders": True,
+    "zip_pack": True
+})
+MAIN_SETTINGS.add_property("run_options", "build_single", {
+    "configs": "?",
+    "minify_json": True,
+    "delete_empty_folders": True,
+    "zip_pack": True
+})
 
-MAIN_SETTINGS = get_settings()
+# API tokens
+MAIN_SETTINGS.add_property("tokens", "curseforge")
+
+# Load settings file
+MAIN_SETTINGS.load()
+MAIN_SETTINGS.save()

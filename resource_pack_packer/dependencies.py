@@ -50,7 +50,7 @@ def check_cache(value: str, src: str) -> bool:
 
 
 def extract_jar(src: str, mc_version: str):
-    out_dir = os.path.join(MAIN_SETTINGS.working_directory, "dev", mc_version)
+    out_dir = os.path.join(MAIN_SETTINGS.get_property("locations", "working_directory"), "dev", mc_version)
     with zipfile.ZipFile(src) as jar:
         for file in jar.namelist():
             if file.startswith("assets"):
@@ -75,7 +75,7 @@ class Mod:
         self.file_name = ""
 
     def download(self, mod_cache: str) -> bool:
-        download_dir = os.path.join(MAIN_SETTINGS.working_directory, "dev", "src")
+        download_dir = os.path.join(MAIN_SETTINGS.get_property("locations", "working_directory"), "dev", "src")
         self.file_name = f"{self.name}.{self.project}.{self.file}.jar"
         self.directory = os.path.join(download_dir, self.file_name)
 
@@ -87,7 +87,7 @@ class Mod:
         # Get download link
         r = requests.get(f"{URL_CURSEFORGE}/v1/mods/{self.project}/files/{self.file}/download-url", headers={
             "accept": "application/json",
-            "x-api-key": MAIN_SETTINGS.curseforge_token
+            "x-api-key": MAIN_SETTINGS.get_property("tokens", "curseforge")
         })
 
         download_url = r.json()["data"]
@@ -114,7 +114,7 @@ def install_version_from_index(index_dir: str) -> str:
 
 def setup(pack_override: Optional[str] = None, config_override: Optional[list[Config] | str] = None):
     # Pack info
-    config_files = glob(os.path.join(MAIN_SETTINGS.working_directory, "configs", "*"))
+    config_files = glob(os.path.join(MAIN_SETTINGS.get_property("locations", "working_directory"), "configs", "*"))
     config_file_names = []
     for file in config_files:
         config_file_names.append(os.path.basename(file))
@@ -148,7 +148,8 @@ def setup(pack_override: Optional[str] = None, config_override: Optional[list[Co
         mc_jar = None
         # Check for installed versions
         for version in config.mc_versions:
-            mc_jar_unchecked = os.path.join(MAIN_SETTINGS.minecraft_dir, "versions", version, f"{version}.jar")
+            mc_jar_unchecked = os.path.join(
+                MAIN_SETTINGS.get_property("locations", "minecraft"), "versions", version, f"{version}.jar")
             # Version installed
             if os.path.exists(mc_jar_unchecked) and os.path.isfile(mc_jar_unchecked):
                 mc_jar = mc_jar_unchecked
@@ -158,7 +159,7 @@ def setup(pack_override: Optional[str] = None, config_override: Optional[list[Co
         if mc_jar is None:
             # Check if index for versions are preset
             for version in config.mc_versions:
-                version_index = os.path.join(MAIN_SETTINGS.minecraft_dir, "versions", version, f"{version}.json")
+                version_index = os.path.join(MAIN_SETTINGS.get_property("locations", "minecraft"), "versions", version, f"{version}.json")
                 if os.path.exists(version_index):
                     mc_jar = install_version_from_index(version_index)
                     installer_logger.info(f"Installed Minecraft: {version}")
@@ -173,7 +174,7 @@ def setup(pack_override: Optional[str] = None, config_override: Optional[list[Co
                         version_index = version["url"]
                         break
                 if version_index is not None:
-                    index_dir = os.path.join(MAIN_SETTINGS.minecraft_dir, "versions", config.mc_version, f"{config.mc_version}.json")
+                    index_dir = os.path.join(MAIN_SETTINGS.get_property("locations", "minecraft"), "versions", config.mc_version, f"{config.mc_version}.json")
                     download_file(version_index, index_dir)
                     mc_jar = install_version_from_index(index_dir)
                     installer_logger.info(f"Installed Minecraft: {config.mc_version}")
@@ -182,7 +183,7 @@ def setup(pack_override: Optional[str] = None, config_override: Optional[list[Co
 
         mc_version = os.path.basename(mc_jar).replace(".jar", "")
 
-        mod_cache = os.path.join(MAIN_SETTINGS.working_directory, "dev", "src", "cache.json")
+        mod_cache = os.path.join(MAIN_SETTINGS.get_property("locations", "working_directory"), "dev", "src", "cache.json")
 
         # Download
         for i, mod in enumerate(config.curseforge_dependencies, start=1):
@@ -194,12 +195,12 @@ def setup(pack_override: Optional[str] = None, config_override: Optional[list[Co
                 installer_logger.info(f"Already downloaded mod [{i}/{len(config.curseforge_dependencies)}]: {mod.name}")
 
         # Preinstall
-        if not os.path.exists(os.path.join(MAIN_SETTINGS.minecraft_dir, "mods")):
-            os.makedirs(os.path.join(MAIN_SETTINGS.minecraft_dir, "mods"))
+        if not os.path.exists(os.path.join(MAIN_SETTINGS.get_property("locations", "minecraft"), "mods")):
+            os.makedirs(os.path.join(MAIN_SETTINGS.get_property("locations", "minecraft"), "mods"))
 
         # Clear dependencies
-        if os.path.exists(os.path.join(MAIN_SETTINGS.working_directory, "dev", mc_version, "assets")):
-            shutil.rmtree(os.path.join(MAIN_SETTINGS.working_directory, "dev", mc_version, "assets"))
+        if os.path.exists(os.path.join(MAIN_SETTINGS.get_property("locations", "working_directory"), "dev", mc_version, "assets")):
+            shutil.rmtree(os.path.join(MAIN_SETTINGS.get_property("locations", "working_directory"), "dev", mc_version, "assets"))
 
         # Minecraft install
         extract_jar(mc_jar, mc_version)

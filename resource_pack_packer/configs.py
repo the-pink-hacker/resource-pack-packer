@@ -20,7 +20,7 @@ def parse_name_scheme_keywords(scheme, name, version, mc_version):
 
 
 def _get_config_file(pack: str, logger: logging.Logger) -> str:
-    files = glob(path.join(MAIN_SETTINGS.working_directory, "configs", "*"))
+    files = glob(path.join(MAIN_SETTINGS.get_property("locations", "working_directory"), "configs", "*"))
 
     file_dir = None
 
@@ -94,12 +94,12 @@ class PackInfo:
         if "run_options" in data:
             self.run_options = RunOptions.parse(data["run_options"])
         else:
-            self.run_options = RunOptions.parse(MAIN_SETTINGS.run_options)
+            self.run_options = RunOptions.parse(MAIN_SETTINGS.get_group("run_options"))
 
     @staticmethod
     def parse(pack_name: str) -> Optional["PackInfo"]:
         logger = logging.getLogger(pack_name)
-        file_directory = path.join(MAIN_SETTINGS.working_directory, "configs", pack_name)
+        file_directory = path.join(MAIN_SETTINGS.get_property("locations", "working_directory"), "configs", pack_name)
         if os.path.exists(file_directory):
             with open(file_directory, "r") as file:
                 data = json.load(file)
@@ -150,8 +150,8 @@ class Config:
         if check_option(config, "patches"):
             for patch in config["patches"]:
                 self.patches.append(PatchFile.parse_file(
-                    os.path.join(MAIN_SETTINGS.working_directory, MAIN_SETTINGS.patch_dir, f"{patch}.json"), patch,
-                    logger))
+                    os.path.join(MAIN_SETTINGS.get_property("locations", "working_directory"),
+                                 MAIN_SETTINGS.get_property("locations", "patch"), f"{patch}.json"), patch, logger))
 
         if "dependencies" in config and "curseforge" in config["dependencies"]:
             self.curseforge_dependencies = []
@@ -252,7 +252,7 @@ class RunOptions:
             if "out_dir" in value:
                 out_dir = value["out_dir"]
             else:
-                out_dir = MAIN_SETTINGS.out_dir
+                out_dir = MAIN_SETTINGS.get_property("locations", "out")
 
             if "version" in value:
                 version = value["version"]

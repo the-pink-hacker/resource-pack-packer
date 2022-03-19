@@ -5,7 +5,6 @@ import shutil
 import zipfile
 from glob import glob
 from multiprocessing import pool
-from os import path
 from threading import Thread
 from timeit import default_timer
 from typing import Optional
@@ -17,8 +16,8 @@ from resource_pack_packer.validation import validate
 
 
 def zip_dir(src, dest):
-    if not path.exists(path.dirname(dest)):
-        os.makedirs(path.dirname(dest))
+    if not os.path.exists(os.path.dirname(dest)):
+        os.makedirs(os.path.dirname(dest))
 
     with zipfile.ZipFile(dest, "w", zipfile.ZIP_DEFLATED) as zip_file:
         for root, dirs, files in os.walk(src):
@@ -37,10 +36,9 @@ def minify_json(directory):
 
 class Packer:
     def __init__(self, pack=None, parent=None):
-        self.PACK_FOLDER_DIR = MAIN_SETTINGS.pack_folder
-        self.TEMP_DIR = parse_dir_keywords(os.path.join(MAIN_SETTINGS.working_directory, MAIN_SETTINGS.temp_dir))
-        self.OUT_DIR = parse_dir_keywords(os.path.join(MAIN_SETTINGS.working_directory, MAIN_SETTINGS.out_dir))
-        self.PATCH_DIR = parse_dir_keywords(os.path.join(MAIN_SETTINGS.working_directory, MAIN_SETTINGS.patch_dir))
+        self.TEMP_DIR = parse_dir_keywords(os.path.join(MAIN_SETTINGS.get_property("locations", "working_directory"), MAIN_SETTINGS.get_property("locations", "temp")))
+        self.OUT_DIR = parse_dir_keywords(os.path.join(MAIN_SETTINGS.get_property("locations", "working_directory"), MAIN_SETTINGS.get_property("locations", "out")))
+        self.PATCH_DIR = parse_dir_keywords(os.path.join(MAIN_SETTINGS.get_property("locations", "working_directory"), MAIN_SETTINGS.get_property("locations", "patch")))
 
         self.PACK_OVERRIDE = pack is not None
 
@@ -67,7 +65,7 @@ class Packer:
               close: Optional[bool] = None):
         # Pack info
         if pack_override is None:
-            config_files = glob(path.join(MAIN_SETTINGS.working_directory, "configs", "*"))
+            config_files = glob(os.path.join(MAIN_SETTINGS.get_property("locations", "working_directory"), "configs", "*"))
             config_file_names = []
             for file in config_files:
                 config_file_names.append(os.path.basename(file))
@@ -109,7 +107,7 @@ class Packer:
             self.configs = self.run_option.get_configs(self.pack_info.configs, self.logger, config_override)[0]
 
         # Pack
-        if self.run_option.out_dir == MAIN_SETTINGS.out_dir:
+        if self.run_option.out_dir == MAIN_SETTINGS.get_property("locations", "out"):
             self.clear_temp()
 
         self.clear_out()
@@ -130,15 +128,15 @@ class Packer:
                 self.start(selected_pack_name, selected_run_option, config_override)
 
     def _pack(self, config: Config):
-        pack_name = parse_name_scheme_keywords(self.pack_info.name_scheme, path.basename(self.pack_dir), self.version,
+        pack_name = parse_name_scheme_keywords(self.pack_info.name_scheme, os.path.basename(self.pack_dir), self.version,
                                                config.mc_version)
         logger = logging.getLogger(f"{os.path.basename(self.pack_dir)}\x1b[0m/\x1b[34m{config.name}\x1b[0m")
 
-        temp_pack_dir = path.join(self.TEMP_DIR, pack_name)
+        temp_pack_dir = os.path.join(self.TEMP_DIR, pack_name)
 
         # Overrides output
-        if self.run_option.out_dir != MAIN_SETTINGS.out_dir:
-            temp_pack_dir = path.join(parse_dir_keywords(self.run_option.out_dir), pack_name)
+        if self.run_option.out_dir != MAIN_SETTINGS.get_property("locations", "out"):
+            temp_pack_dir = os.path.join(parse_dir_keywords(self.run_option.out_dir), pack_name)
             self.clear_temp(temp_pack_dir)
 
         # Copy Files
@@ -178,16 +176,16 @@ class Packer:
 
         # Delete Empty Folders
         if config.delete_empty_folders:
-            directories = glob(path.join(temp_pack_dir, "**"), recursive=True)
+            directories = glob(os.path.join(temp_pack_dir, "**"), recursive=True)
 
             for directory in directories:
-                if path.isdir(directory) and path.exists(directory):
-                    if len(glob(path.join(directory, "**"), recursive=True)) == 1:
+                if os.path.isdir(directory) and os.path.exists(directory):
+                    if len(glob(os.path.join(directory, "**"), recursive=True)) == 1:
                         os.remove(directory)
 
         # Zip
         if self.run_option.zip_pack:
-            output = path.normpath(path.join(self.OUT_DIR, pack_name + ".zip"))
+            output = os.path.normpath(os.path.join(self.OUT_DIR, pack_name + ".zip"))
             zip_dir(temp_pack_dir, output)
             logger.info(f"Completed pack: {output}")
 
@@ -196,12 +194,12 @@ class Packer:
             validate(temp_pack_dir, logger.name)
 
     def _copy_pack(self, src: str, dest: str):
-        files = glob(path.join(src, "**"), recursive=True)
+        files = glob(os.path.join(src, "**"), recursive=True)
 
         copy_threads = []
 
         for file in files:
-            if path.isfile(file):
+            if os.path.isfile(file):
                 thread = Thread(target=self._copy_file, args=[src, dest, file])
                 copy_threads.append(thread)
                 thread.start()
@@ -216,30 +214,30 @@ class Packer:
             shutil.copy(file, file_dest)
         except IOError:
             try:
-                os.makedirs(path.dirname(file_dest))
+                os.makedirs(os.path.dirname(file_dest))
             except FileExistsError:
                 pass
             shutil.copy(file, file_dest)
 
     def delete(self, directory, folder, ignore, logger: logging.Logger):
-        namespaces = glob(path.join(directory, "assets", "*"))
+        namespaces = glob(os.path.join(directory, "assets", "*"))
 
         for i, namespace in enumerate(namespaces, start=1):
-            if path.exists(path.join(namespace, folder)):
-                folders = glob(path.join(namespace, folder, "*"))
+            if os.path.exists(os.path.join(namespace, folder)):
+                folders = glob(os.path.join(namespace, folder, "*"))
 
                 for fold in folders:
                     delete_files = True
                     for ig in ignore:
-                        if path.basename(fold) == ig.lower():
+                        if os.path.basename(fold) == ig.lower():
                             delete_files = False
 
                     if delete_files:
                         shutil.rmtree(fold)
-                logger.info(f"Deleted texture [{i}/{len(namespaces)}]: {path.basename(namespace)}")
+                logger.info(f"Deleted texture [{i}/{len(namespaces)}]: {os.path.basename(namespace)}")
 
     def minify_json_files(self, temp_pack_dir):
-        files = glob(path.join(temp_pack_dir, "**"), recursive=True)
+        files = glob(os.path.join(temp_pack_dir, "**"), recursive=True)
 
         for file in files:
             minify_json(file)
@@ -249,12 +247,12 @@ class Packer:
         if directory is None:
             directory = self.TEMP_DIR
 
-        if path.exists(directory):
+        if os.path.exists(directory):
             self.logger.info("Clearing Temp...")
             shutil.rmtree(directory)
 
     def clear_out(self):
         """Clears the out folder"""
-        if path.exists(self.OUT_DIR):
+        if os.path.exists(self.OUT_DIR):
             self.logger.info("Clearing Out...")
             shutil.rmtree(self.OUT_DIR)
