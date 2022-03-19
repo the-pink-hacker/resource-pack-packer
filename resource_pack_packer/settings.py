@@ -6,6 +6,8 @@ from os import path
 import tkinter
 from tkinter import filedialog
 
+from resource_pack_packer.console import parse_dir
+
 root = tkinter.Tk()
 root.withdraw()
 
@@ -18,10 +20,6 @@ def parse_dir_keywords(directory):
     directory = parse_keyword(directory, "packdir", MAIN_SETTINGS.pack_folder)
     directory = parse_keyword(directory, "workdir", MAIN_SETTINGS.working_directory)
     return parse_dir(directory)
-
-
-def parse_dir(directory):
-    return path.normpath(path.abspath(path.expanduser(directory)))
 
 
 def folder_dialog(title="Select Folder", directory=os.path.abspath(os.sep)):

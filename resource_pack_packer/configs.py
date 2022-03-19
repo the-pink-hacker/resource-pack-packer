@@ -200,7 +200,8 @@ class RunOptions:
         self.rerun = rerun
         self.validate = validate
 
-    def get_configs(self, configs: List[Config], logger: logging.Logger, config_override: Union[List[int], str, None] = None) -> Tuple[List[Config], List[int]]:
+    def get_configs(self, configs: List[Config], logger: logging.Logger,
+                    config_override: Optional[List[int | str] | str] = None) -> Tuple[List[Config], List[int]]:
         selected_configs = []
         selected_config_indexes = []
 
@@ -226,7 +227,19 @@ class RunOptions:
         else:
             if isinstance(config_override, list):
                 for item in config_override:
-                    selected_configs.append(configs[item])
+                    parsed_item = None
+                    if isinstance(item, int):
+                        parsed_item = configs[item]
+                    else:
+                        for config in configs:
+                            if item == config.name:
+                                parsed_item = config
+                                break
+                    if parsed_item is None:
+                        logger.error(f"Couldn't find config: {item}")
+                    else:
+                        selected_configs.append(parsed_item)
+
             elif config_override == "*":
                 selected_configs = configs
             selected_config_indexes = config_override

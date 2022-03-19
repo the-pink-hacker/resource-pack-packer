@@ -8,12 +8,11 @@ from multiprocessing import pool
 from os import path
 from threading import Thread
 from timeit import default_timer
-from typing import Optional, List
+from typing import Optional
 
 from resource_pack_packer.configs import PackInfo, parse_name_scheme_keywords, Config, RunOptions
 from resource_pack_packer.console import choose_from_list, input_log
 from resource_pack_packer.settings import MAIN_SETTINGS, parse_dir_keywords
-from resource_pack_packer.socket import socket_json_run
 from resource_pack_packer.validation import validate
 
 
@@ -51,7 +50,7 @@ class Packer:
         self.pack_dir: Optional[str] = None
         self.version: Optional[str] = None
         self.run_option: Optional[RunOptions] = None
-        self.configs: Optional[List[Config]] = None
+        self.configs: Optional[list[Config]] = None
 
         if self.PACK_OVERRIDE:
             self.pack = pack
@@ -61,14 +60,18 @@ class Packer:
 
         self.logger = logging.getLogger("Packing")
 
-    def start(self, pack_override: Optional[str] = None, run_option_override: Optional[int] = None, config_override: Optional[List[int]] = None):
+    def start(self,
+              pack_override: Optional[str] = None,
+              run_option_override: Optional[int | str] = None,
+              config_override: Optional[list[int | str]] = None,
+              close: Optional[bool] = None):
         # Pack info
-        config_files = glob(path.join(MAIN_SETTINGS.working_directory, "configs", "*"))
-        config_file_names = []
-        for file in config_files:
-            config_file_names.append(os.path.basename(file))
-
         if pack_override is None:
+            config_files = glob(path.join(MAIN_SETTINGS.working_directory, "configs", "*"))
+            config_file_names = []
+            for file in config_files:
+                config_file_names.append(os.path.basename(file))
+
             selected_pack_name = choose_from_list(config_file_names, "Select pack:")[0]
         else:
             selected_pack_name = pack_override
@@ -82,7 +85,16 @@ class Packer:
         if run_option_override is None:
             self.run_option, selected_run_option = choose_from_list(self.pack_info.run_options, "Select run option:")
         else:
-            self.run_option = self.pack_info.run_options[run_option_override]
+            if isinstance(run_option_override, int):
+                self.run_option = self.pack_info.run_options[run_option_override]
+            else:
+                for run_option in self.pack_info.run_options:
+                    if run_option.name == run_option_override:
+                        self.run_option = run_option
+                        break
+                if self.run_option is None:
+                    self.logger.error(f"Couldn't find run option: {run_option_override}")
+                    return
             selected_run_option = run_option_override
 
         if self.run_option.version is not None:
@@ -112,8 +124,8 @@ class Packer:
         self.logger.info(f"Time: {default_timer() - start_time} Seconds")
 
         # Rerun
-        if self.run_option.rerun:
-            completion_input = choose_from_list(["rerun", "close"], "Waiting for input...")[0]
+        if self.run_option.rerun and not close:
+            completion_input = choose_from_list(["rerun", "back"], "Waiting for input...")[0]
             if completion_input == "rerun":
                 self.start(selected_pack_name, selected_run_option, config_override)
 

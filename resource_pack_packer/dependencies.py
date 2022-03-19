@@ -2,18 +2,16 @@ import json
 import logging
 import os
 import zipfile
-from tkinter import filedialog
 
 import requests
 import shutil
 
 from glob import glob
-from typing import List, Union
+from typing import Union, Optional
 
-from resource_pack_packer import settings
-from resource_pack_packer.configs import PackInfo, RunOptions
+from resource_pack_packer.configs import PackInfo, RunOptions, Config
 from resource_pack_packer.console import choose_from_list, add_to_logger_name
-from resource_pack_packer.settings import MAIN_SETTINGS, parse_dir
+from resource_pack_packer.settings import MAIN_SETTINGS
 
 logger = logging.getLogger("Setup")
 
@@ -21,7 +19,7 @@ URL_CURSEFORGE = "https://api.curseforge.com"
 URL_MINECRAFT_VERSION_INDEX = "https://launchermeta.mojang.com/mc/game/version_manifest_v2.json"
 
 
-def update_cache(value: Union[str, List[str]], src: str):
+def update_cache(value: Union[str, list[str]], src: str):
     cache_data = {
         "cache": []
     }
@@ -114,22 +112,37 @@ def install_version_from_index(index_dir: str) -> str:
     return out_dir
 
 
-def setup():
+def setup(pack_override: Optional[str] = None, config_override: Optional[list[Config] | str] = None):
     # Pack info
     config_files = glob(os.path.join(MAIN_SETTINGS.working_directory, "configs", "*"))
     config_file_names = []
     for file in config_files:
         config_file_names.append(os.path.basename(file))
 
-    selected_pack_name = choose_from_list(config_file_names, "Select pack:")[0]
+    if pack_override is None:
+        selected_pack_name = choose_from_list(config_file_names, "Select pack:")[0]
+    else:
+        selected_pack_name = pack_override
     pack_info = PackInfo.parse(selected_pack_name)
-    config_selection = choose_from_list(["All", "Select"], "Configs:")[0]
+
+    if config_override is None:
+        config_selection = config_override
+    else:
+        config_selection = choose_from_list(["all", "select"], "Configs:")[0]
+
+    if config_selection == "all":
+        parsed_config_selection = "*"
+    elif config_selection == "select":
+        parsed_config_selection = "?"
+    else:
+        parsed_config_selection = config_selection
+
     # Run option is only used to select config
-    run_option = RunOptions("setup", "*" if config_selection == "All" else "?", False, False, False, "", "", False, False)
+    run_option = RunOptions("setup", parsed_config_selection, False, False, False, "", "", False, False)
     configs = run_option.get_configs(pack_info.configs, logger)[0]
 
     for config in configs:
-        installer_logger = add_to_logger_name(logger.name, config)
+        installer_logger = add_to_logger_name(logger.name, str(config))
 
         # Minecraft version
         mc_jar = None
