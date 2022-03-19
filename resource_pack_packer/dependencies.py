@@ -126,9 +126,9 @@ def setup(pack_override: Optional[str] = None, config_override: Optional[list[Co
     pack_info = PackInfo.parse(selected_pack_name)
 
     if config_override is None:
-        config_selection = config_override
-    else:
         config_selection = choose_from_list(["all", "select"], "Configs:")[0]
+    else:
+        config_selection = config_override
 
     if config_selection == "all":
         parsed_config_selection = "*"
@@ -182,12 +182,13 @@ def setup(pack_override: Optional[str] = None, config_override: Optional[list[Co
 
         mc_version = os.path.basename(mc_jar).replace(".jar", "")
 
-        mod_cache = os.path.join(MAIN_SETTINGS.working_directory, "dev", mc_version, "cache.json")
+        mod_cache = os.path.join(MAIN_SETTINGS.working_directory, "dev", "src", "cache.json")
 
         # Download
         for i, mod in enumerate(config.curseforge_dependencies, start=1):
             downloaded = mod.download(mod_cache)
             if downloaded:
+                update_cache(f"{mod.name}.{mod.project}.{mod.file}", mod_cache)
                 installer_logger.info(f"Downloaded mod [{i}/{len(config.curseforge_dependencies)}]: {mod.name}")
             else:
                 installer_logger.info(f"Already downloaded mod [{i}/{len(config.curseforge_dependencies)}]: {mod.name}")
@@ -205,13 +206,9 @@ def setup(pack_override: Optional[str] = None, config_override: Optional[list[Co
         installer_logger.info(f"Installed Minecraft: {mc_version}")
 
         # Install
-        mods = []
         for i, mod in enumerate(config.curseforge_dependencies, start=1):
             name = f"{mod.name}.{mod.project}.{mod.file}"
-            mods.append(name)
             mod.install(mc_version)
             installer_logger.info(f"Installed mod [{i}/{len(config.curseforge_dependencies)}]: {name}")
 
-        # Update mod cache
-        if mods:
-            update_cache(mods, mod_cache)
+        logger.info("Completed setup")
