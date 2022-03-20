@@ -11,6 +11,8 @@ from typing import Optional
 
 from resource_pack_packer.configs import PackInfo, parse_name_scheme_keywords, Config, RunOptions
 from resource_pack_packer.console import choose_from_list, input_log
+from resource_pack_packer.preprocessor import RPPModel, Model
+from resource_pack_packer.selectors import parse_minecraft_identifier
 from resource_pack_packer.settings import MAIN_SETTINGS, parse_dir_keywords
 from resource_pack_packer.validation import validate
 
@@ -36,9 +38,12 @@ def minify_json(directory):
 
 class Packer:
     def __init__(self, pack=None, parent=None):
-        self.TEMP_DIR = parse_dir_keywords(os.path.join(MAIN_SETTINGS.get_property("locations", "working_directory"), MAIN_SETTINGS.get_property("locations", "temp")))
-        self.OUT_DIR = parse_dir_keywords(os.path.join(MAIN_SETTINGS.get_property("locations", "working_directory"), MAIN_SETTINGS.get_property("locations", "out")))
-        self.PATCH_DIR = parse_dir_keywords(os.path.join(MAIN_SETTINGS.get_property("locations", "working_directory"), MAIN_SETTINGS.get_property("locations", "patch")))
+        self.TEMP_DIR = parse_dir_keywords(os.path.join(MAIN_SETTINGS.get_property("locations", "working_directory"),
+                                                        MAIN_SETTINGS.get_property("locations", "temp")))
+        self.OUT_DIR = parse_dir_keywords(os.path.join(MAIN_SETTINGS.get_property("locations", "working_directory"),
+                                                       MAIN_SETTINGS.get_property("locations", "out")))
+        self.PATCH_DIR = parse_dir_keywords(os.path.join(MAIN_SETTINGS.get_property("locations", "working_directory"),
+                                                         MAIN_SETTINGS.get_property("locations", "patch")))
 
         self.PACK_OVERRIDE = pack is not None
 
@@ -65,7 +70,8 @@ class Packer:
               close: Optional[bool] = None):
         # Pack info
         if pack_override is None:
-            config_files = glob(os.path.join(MAIN_SETTINGS.get_property("locations", "working_directory"), "configs", "*"))
+            config_files = glob(
+                os.path.join(MAIN_SETTINGS.get_property("locations", "working_directory"), "configs", "*"))
             config_file_names = []
             for file in config_files:
                 config_file_names.append(os.path.basename(file))
@@ -128,7 +134,8 @@ class Packer:
                 self.start(selected_pack_name, selected_run_option, config_override)
 
     def _pack(self, config: Config):
-        pack_name = parse_name_scheme_keywords(self.pack_info.name_scheme, os.path.basename(self.pack_dir), self.version,
+        pack_name = parse_name_scheme_keywords(self.pack_info.name_scheme, os.path.basename(self.pack_dir),
+                                               self.version,
                                                config.mc_version)
         logger = logging.getLogger(f"{os.path.basename(self.pack_dir)}\x1b[0m/\x1b[34m{config.name}\x1b[0m")
 
@@ -162,17 +169,35 @@ class Packer:
                 indent = 2
             json.dump(meta, file, ensure_ascii=False, indent=indent)
 
-        # Minify Json
-        if config.minify_json and self.run_option.minify_json:
-            logger.info("Minifying json files...")
-            self.minify_json_files(temp_pack_dir)
-
         # Patch
         if len(config.patches) > 0:
             logger.info(f"Applying patches...")
 
             for patch in config.patches:
                 patch.run(temp_pack_dir, logger.name, self.pack_info, config)
+
+        # Preprocessors
+        logger.info("Running preprocessors...")
+        rpp_models = glob(os.path.join(temp_pack_dir, "assets", "*", "models", "rpp", "**"), recursive=True)
+
+        # Remove folders and non-json files
+        parsed_rpp_models = []
+        for model in rpp_models:
+            if os.path.isfile(model) and model.endswith(".json"):
+                parsed_rpp_models.append(model)
+
+        for i, model in enumerate(parsed_rpp_models, start=1):
+            processed_model, identifier = RPPModel.parse_file(model).process(temp_pack_dir)
+            Model.save(processed_model,
+                       os.path.join(temp_pack_dir, parse_minecraft_identifier(identifier, "models", "json")))
+            os.remove(model)
+            logger.info(f"Processed model [{i}/{len(parsed_rpp_models)}]")
+
+
+        # Minify Json
+        if config.minify_json and self.run_option.minify_json:
+            logger.info("Minifying json files...")
+            self.minify_json_files(temp_pack_dir)
 
         # Delete Empty Folders
         if config.delete_empty_folders:
