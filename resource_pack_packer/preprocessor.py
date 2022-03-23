@@ -22,7 +22,8 @@ class Model:
     elements: list[dict]
     display: Optional[dict]
 
-    def __init__(self, parent: Optional[str], textures: Optional[dict], elements: list[dict], display: Optional[dict], temp_dir: str):
+    def __init__(self, parent: Optional[str], textures: Optional[dict], elements: list[dict], display: Optional[dict],
+                 temp_dir: str):
         self.parent = parent
         self.textures = textures
         self.elements = elements
@@ -86,15 +87,6 @@ class RPPModel:
             data = json.load(model)
         return RPPModel.parse(data)
 
-    @staticmethod
-    def _flip_face(face: dict, update_culling: bool) -> dict:
-        # Culling
-        if update_culling:
-            if "cullface" in face:
-                face["cullface"] = Direction.flip(face["cullface"])
-
-        return face
-
     def _modify(self, temp_dir: str) -> Model:
         model = Model.parse_file(find_model(self.modify["model"], temp_dir), temp_dir)
         if self.modify["type"] == "translate":
@@ -106,12 +98,12 @@ class RPPModel:
                 element["from"] = [element["from"][0] + x, element["from"][1] + y, element["from"][2] + z]
                 element["to"] = [element["to"][0] + x, element["to"][1] + y, element["to"][2] + z]
         elif self.modify["type"] == "flip":
-            update_culling = get_from_dict(self.modify["arguments"], "update_culling", True)
             origin = get_from_dict(self.modify["arguments"], "origin", [8.0, 8.0, 8.0])
             x = get_from_dict(self.modify["arguments"], "x", False)
             y = get_from_dict(self.modify["arguments"], "y", False)
             z = get_from_dict(self.modify["arguments"], "z", False)
 
+            # Flip elements
             for element in model.elements:
                 if x:
                     from_pos = element["from"][0]
@@ -131,17 +123,23 @@ class RPPModel:
 
                 flipped_faces = {}
 
+                # Flip faces
                 for direction, face in element["faces"].items():
-                    if x and (direction == Direction.EAST.value or direction == Direction.WEST.value):
-                        flipped_faces |= {Direction.flip(direction): RPPModel._flip_face(face, update_culling)}
-                        continue
-                    if y and (direction == Direction.UP.value or direction == Direction.DOWN.value):
-                        flipped_faces |= {Direction.flip(direction): RPPModel._flip_face(face, update_culling)}
-                        continue
-                    if z and (direction == Direction.NORTH.value or direction == Direction.SOUTH.value):
-                        flipped_faces |= {Direction.flip(direction): RPPModel._flip_face(face, update_culling)}
-                        continue
-                    flipped_faces |= {direction: face}
+                    flipped_direction = direction
+                    # Flip face
+                    if (x and (direction == Direction.EAST.value or direction == Direction.WEST.value)) or \
+                            (y and (direction == Direction.UP.value or direction == Direction.DOWN.value)) or \
+                            (z and (direction == Direction.NORTH.value or direction == Direction.SOUTH.value)):
+                        flipped_direction = Direction.flip(direction)
+
+                    # Culling
+                    if "cullface" in face:
+                        if (x and (face["cullface"] == Direction.EAST.value or face["cullface"] == Direction.WEST.value)) or \
+                                (y and (face["cullface"] == Direction.UP.value or face["cullface"] == Direction.DOWN.value)) or \
+                                (z and (face["cullface"] == Direction.NORTH.value or face["cullface"] == Direction.SOUTH.value)):
+                            face["cullface"] = Direction.flip(face["cullface"])
+
+                    flipped_faces |= {flipped_direction: face}
                 element["faces"] = flipped_faces
         return model
 
