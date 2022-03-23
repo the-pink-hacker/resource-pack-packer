@@ -10,7 +10,7 @@ from os import path
 
 from typing import List, Union, Tuple
 
-from resource_pack_packer.selectors import FileSelector
+from resource_pack_packer.selectors import FileSelector, Direction
 from resource_pack_packer.settings import parse_dir_keywords
 
 
@@ -352,16 +352,6 @@ def get_cube_direction(from_pos: Tuple[int], to_pos: Tuple[int]) -> Union[str, N
 
 class ModifierType(Enum):
     MODEL_MARGIN = "model_margin"
-
-
-class Direction(Enum):
-    NORTH = "north"
-    EAST = "east"
-    SOUTH = "south"
-    WEST = "west"
-    UP = "up"
-    DOWN = "down"
-    CENTER = "center"
 
 
 def _patch_modifier(pack: str, pack_info, patch: Patch, logger: logging.Logger):

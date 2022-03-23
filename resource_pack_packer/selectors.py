@@ -38,6 +38,7 @@ class FileSelector:
     """
     Select a collection of files from a patch file.
     """
+
     def __init__(self, selector_type: str, arguments: dict, pack: str):
         self.selector_type = selector_type
         self.arguments = arguments
@@ -91,12 +92,14 @@ class FileSelector:
                 parsed_blockstates = []
 
                 for blockstate in blockstates:
-                    parsed_blockstates.append(os.path.join(self.pack, parse_minecraft_identifier(blockstate, "blockstates", "json")))
+                    parsed_blockstates.append(
+                        os.path.join(self.pack, parse_minecraft_identifier(blockstate, "blockstates", "json")))
 
                 parsed_lang_files = []
 
                 for lang_file in lang_files:
-                    parsed_lang_files.append(os.path.join(self.pack, parse_minecraft_identifier(lang_file, "lang", "json")))
+                    parsed_lang_files.append(
+                        os.path.join(self.pack, parse_minecraft_identifier(lang_file, "lang", "json")))
 
                 return parsed_models + parsed_blockstates + parsed_lang_files
             case FileSelectorType.BLOCK.value:
@@ -138,3 +141,34 @@ class FileSelector:
     @staticmethod
     def parse(data: dict, pack):
         return FileSelector(data["type"], data["arguments"], pack)
+
+
+class Direction(Enum):
+    NORTH = "north"
+    EAST = "east"
+    SOUTH = "south"
+    WEST = "west"
+    UP = "up"
+    DOWN = "down"
+    CENTER = "center"
+    NONE = "none"
+
+    @staticmethod
+    def flip(direction: str) -> "Direction":
+        match direction:
+            case Direction.NORTH.value:
+                return Direction.SOUTH.value
+            case Direction.EAST.value:
+                return Direction.WEST.value
+            case Direction.SOUTH.value:
+                return Direction.NORTH.value
+            case Direction.WEST.value:
+                return Direction.EAST.value
+            case Direction.UP.value:
+                return Direction.DOWN.value
+            case Direction.DOWN.value:
+                return Direction.UP.value
+            case Direction.CENTER.value:
+                return Direction.CENTER.value
+            case _:
+                return Direction.NONE.value

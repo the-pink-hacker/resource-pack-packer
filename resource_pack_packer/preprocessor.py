@@ -2,7 +2,7 @@ import json
 import os
 from typing import Optional
 
-from resource_pack_packer.selectors import parse_minecraft_identifier
+from resource_pack_packer.selectors import parse_minecraft_identifier, Direction
 
 
 def get_from_dict(dictionary: dict, key: str, default=None):
@@ -86,6 +86,15 @@ class RPPModel:
             data = json.load(model)
         return RPPModel.parse(data)
 
+    @staticmethod
+    def _flip_face(face: dict, update_culling: bool) -> dict:
+        # Culling
+        if update_culling:
+            if "cullface" in face:
+                face["cullface"] = Direction.flip(face["cullface"])
+
+        return face
+
     def _modify(self, temp_dir: str) -> Model:
         model = Model.parse_file(find_model(self.modify["model"], temp_dir), temp_dir)
         if self.modify["type"] == "translate":
@@ -96,6 +105,44 @@ class RPPModel:
             for element in model.elements:
                 element["from"] = [element["from"][0] + x, element["from"][1] + y, element["from"][2] + z]
                 element["to"] = [element["to"][0] + x, element["to"][1] + y, element["to"][2] + z]
+        elif self.modify["type"] == "flip":
+            update_culling = get_from_dict(self.modify["arguments"], "update_culling", True)
+            origin = get_from_dict(self.modify["arguments"], "origin", [8.0, 8.0, 8.0])
+            x = get_from_dict(self.modify["arguments"], "x", False)
+            y = get_from_dict(self.modify["arguments"], "y", False)
+            z = get_from_dict(self.modify["arguments"], "z", False)
+
+            for element in model.elements:
+                if x:
+                    from_pos = element["from"][0]
+                    to_pos = element["to"][0]
+                    element["from"][0] = origin[0] + (origin[0] - to_pos)
+                    element["to"][0] = origin[0] + (origin[0] - from_pos)
+                if y:
+                    from_pos = element["from"][1]
+                    to_pos = element["to"][1]
+                    element["from"][1] = origin[1] + (origin[1] - to_pos)
+                    element["to"][1] = origin[1] + (origin[1] - from_pos)
+                if z:
+                    from_pos = element["from"][2]
+                    to_pos = element["to"][2]
+                    element["from"][2] = origin[2] + (origin[2] - to_pos)
+                    element["to"][2] = origin[2] + (origin[2] - from_pos)
+
+                flipped_faces = {}
+
+                for direction, face in element["faces"].items():
+                    if x and (direction == Direction.EAST.value or direction == Direction.WEST.value):
+                        flipped_faces |= {Direction.flip(direction): RPPModel._flip_face(face, update_culling)}
+                        continue
+                    if y and (direction == Direction.UP.value or direction == Direction.DOWN.value):
+                        flipped_faces |= {Direction.flip(direction): RPPModel._flip_face(face, update_culling)}
+                        continue
+                    if z and (direction == Direction.NORTH.value or direction == Direction.SOUTH.value):
+                        flipped_faces |= {Direction.flip(direction): RPPModel._flip_face(face, update_culling)}
+                        continue
+                    flipped_faces |= {direction: face}
+                element["faces"] = flipped_faces
         return model
 
     def process(self, temp_dir: str) -> tuple[Model, str]:
