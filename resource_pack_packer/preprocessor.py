@@ -87,6 +87,14 @@ class RPPModel:
             data = json.load(model)
         return RPPModel.parse(data)
 
+    @staticmethod
+    def _flip_uv_x(uv: list[float]) -> list[float]:
+        return [uv[2], uv[1], uv[0], uv[3]]
+
+    @staticmethod
+    def _flip_uv_y(uv: list[float]) -> list[float]:
+        return [uv[0], uv[3], uv[2], uv[1]]
+
     def _modify(self, temp_dir: str) -> Model:
         model = Model.parse_file(find_model(self.modify["model"], temp_dir), temp_dir)
         if self.modify["type"] == "translate":
@@ -138,6 +146,21 @@ class RPPModel:
                                 (y and (face["cullface"] == Direction.UP.value or face["cullface"] == Direction.DOWN.value)) or \
                                 (z and (face["cullface"] == Direction.NORTH.value or face["cullface"] == Direction.SOUTH.value)):
                             face["cullface"] = Direction.flip(face["cullface"])
+
+                    # UV
+                    if x:
+                        if flipped_direction == Direction.UP.value or flipped_direction == Direction.DOWN.value:
+                            face["uv"] = RPPModel._flip_uv_x(face["uv"])
+                        else:
+                            face["uv"] = RPPModel._flip_uv_y(face["uv"])
+                    if z:
+                        if flipped_direction == Direction.UP.value or flipped_direction == Direction.DOWN.value:
+                            face["uv"] = RPPModel._flip_uv_y(face["uv"])
+                        else:
+                            face["uv"] = RPPModel._flip_uv_x(face["uv"])
+                    if y:
+                        if not (flipped_direction == Direction.UP.value or flipped_direction == Direction.DOWN.value):
+                            face["uv"] = RPPModel._flip_uv_x(face["uv"])
 
                     flipped_faces |= {flipped_direction: face}
                 element["faces"] = flipped_faces
