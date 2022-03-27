@@ -183,7 +183,7 @@ class Packer:
         # Remove folders and non-json files
         parsed_rpp_models = []
         for model in rpp_models:
-            if os.path.isfile(model) and model.endswith(".json"):
+            if os.path.isfile(model) and model.endswith(".rpp.json"):
                 parsed_rpp_models.append(model)
 
         for i, model in enumerate(parsed_rpp_models, start=1):
