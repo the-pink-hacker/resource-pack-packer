@@ -100,6 +100,7 @@ MAIN_SETTINGS.add_property("locations", "minecraft")
 MAIN_SETTINGS.add_property("locations", "temp", "temp")
 MAIN_SETTINGS.add_property("locations", "out", "out")
 MAIN_SETTINGS.add_property("locations", "working_directory")
+MAIN_SETTINGS.add_property("locations", "patch", "patches")
 
 # Run options
 MAIN_SETTINGS.add_property("run_options", "dev", {

@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import sys
 
 from resource_pack_packer import dependencies
 from resource_pack_packer.console import choose_from_list, parse_dir
@@ -59,6 +60,8 @@ def main():
         if args.close:
             return
 
+    setup_settings()
+
     logger.info(f"Working Dir: {MAIN_SETTINGS.get_property('locations', 'working_directory')}")
 
     run_type = choose_from_list(["build", "workdir", "setup", "close"])[0]
@@ -74,6 +77,26 @@ def main():
     elif run_type == "close":
         return
     main()
+
+
+def setup_settings():
+    """
+    Sets up any settings that require user input to decide the default
+    """
+    # Minecraft
+    if MAIN_SETTINGS.get_property("locations", "minecraft") is None:
+        if sys.platform == "windows":
+            minecraft_dir = folder_dialog(title="Select Minecraft directory", directory="%APPDATA%/.minecraft")
+        else:
+            minecraft_dir = folder_dialog(title="Select Minecraft directory", directory="~/.minecraft")
+        MAIN_SETTINGS.set_property("locations", "minecraft", minecraft_dir)
+
+    # Working directory
+    if MAIN_SETTINGS.get_property("locations", "working_directory") is None:
+        MAIN_SETTINGS.set_property("locations", "working_directory", folder_dialog(title="Select working directory",
+                                                                                   directory="~/Documents"))
+
+    MAIN_SETTINGS.save()
 
 
 if __name__ == "__main__":
