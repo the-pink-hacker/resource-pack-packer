@@ -32,26 +32,30 @@ class Settings:
         self._properties = {}
         self.add_property("meta", "version", version)
 
-    def add_property(self, group: str, key: str, default=None):
+    def add_property(self, group: str, key: str, default=None) -> "MAIN_SETTINGS":
         """
         Add a property to be stored in the settings
         :param group: A section of properties
         :param key: The name of the property
         :param default: The default value of the property
+        :return: Its self
         """
         if group in self._properties:
             self._properties[group] |= {key: default}
         else:
             self._properties |= {group: {key: default}}
+        return self
 
-    def set_property(self, group: str, key: str, value):
+    def set_property(self, group: str, key: str, value) -> "MAIN_SETTINGS":
         """
         Set the value of a property
         :param group: A section of properties
         :param key: The name of the property
         :param value: The value that the property will be set to
+        :return: Its self
         """
         self._properties[group][key] = value
+        return self
 
     def get_property(self, group: str, key: str):
         """
@@ -93,41 +97,35 @@ class Settings:
                     self.add_property(group, key, value)
 
 
-MAIN_SETTINGS = Settings(0)
-
-# Locations
-MAIN_SETTINGS.add_property("locations", "minecraft")
-MAIN_SETTINGS.add_property("locations", "temp", "temp")
-MAIN_SETTINGS.add_property("locations", "out", "out")
-MAIN_SETTINGS.add_property("locations", "working_directory")
-MAIN_SETTINGS.add_property("locations", "patch", "patches")
-
-# Run options
-MAIN_SETTINGS.add_property("run_options", "dev", {
-    "configs": "?",
-    "minify_json": False,
-    "delete_empty_folders": False,
-    "zip_pack": False,
-    "out_dir": "#packdir",
-    "version": "DEV",
-    "rerun": True,
-    "validate": True
-})
-MAIN_SETTINGS.add_property("run_options", "build", {
-    "configs": "*",
-    "minify_json": True,
-    "delete_empty_folders": True,
-    "zip_pack": True
-})
-MAIN_SETTINGS.add_property("run_options", "build_single", {
-    "configs": "?",
-    "minify_json": True,
-    "delete_empty_folders": True,
-    "zip_pack": True
-})
-
-# API tokens
-MAIN_SETTINGS.add_property("tokens", "curseforge")
+MAIN_SETTINGS = Settings(0)\
+    .add_property("locations", "minecraft")\
+    .add_property("locations", "temp", "temp")\
+    .add_property("locations", "out", "out")\
+    .add_property("locations", "working_directory")\
+    .add_property("locations", "patch", "patches")\
+    .add_property("run_options", "dev", {
+        "configs": "?",
+        "minify_json": False,
+        "delete_empty_folders": False,
+        "zip_pack": False,
+        "out_dir": "#packdir",
+        "version": "DEV",
+        "rerun": True,
+        "validate": True
+    })\
+    .add_property("run_options", "build", {
+        "configs": "*",
+        "minify_json": True,
+        "delete_empty_folders": True,
+        "zip_pack": True
+    })\
+    .add_property("run_options", "build_single", {
+        "configs": "?",
+        "minify_json": True,
+        "delete_empty_folders": True,
+        "zip_pack": True
+    })\
+    .add_property("tokens", "curseforge")
 
 # Load settings file
 MAIN_SETTINGS.load()
