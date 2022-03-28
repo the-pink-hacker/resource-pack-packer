@@ -177,7 +177,6 @@ class Packer:
                 patch.run(temp_pack_dir, logger.name, self.pack_info, config)
 
         # Preprocessors
-        logger.info("Running preprocessors...")
         rpp_models = glob(os.path.join(temp_pack_dir, "assets", "*", "models", "rpp", "**"), recursive=True)
 
         # Remove folders and non-json files
@@ -186,13 +185,15 @@ class Packer:
             if os.path.isfile(model) and model.endswith(".rpp.json"):
                 parsed_rpp_models.append(model)
 
-        for i, model in enumerate(parsed_rpp_models, start=1):
-            processed_model, identifier = RPPModel.parse_file(model).process(temp_pack_dir)
-            Model.save(processed_model,
-                       os.path.join(temp_pack_dir, parse_minecraft_identifier(identifier, "models", "json")))
-            os.remove(model)
-            logger.info(f"Processed model [{i}/{len(parsed_rpp_models)}]")
+        if len(parsed_rpp_models):
+            logger.info("Running preprocessors...")
 
+            for i, model in enumerate(parsed_rpp_models, start=1):
+                processed_model, identifier = RPPModel.parse_file(model).process(temp_pack_dir)
+                Model.save(processed_model,
+                           os.path.join(temp_pack_dir, parse_minecraft_identifier(identifier, "models", "json")))
+                os.remove(model)
+                logger.info(f"Processed model [{i}/{len(parsed_rpp_models)}]")
 
         # Minify Json
         if config.minify_json and self.run_option.minify_json:

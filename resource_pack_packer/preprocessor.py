@@ -72,14 +72,16 @@ class Model:
 class RPPModel:
     identifier: str
     modify: dict
+    mixin: dict
 
-    def __init__(self, identifier: str, modify: dict):
+    def __init__(self, identifier: str, modify: dict, mixin: dict):
         self.identifier = identifier
         self.modify = modify
+        self.mixin = mixin
 
     @staticmethod
     def parse(data: dict) -> "RPPModel":
-        return RPPModel(get_from_dict(data, "identifier"), get_from_dict(data, "modify"))
+        return RPPModel(get_from_dict(data, "identifier"), get_from_dict(data, "modify"), get_from_dict(data, "mixin"))
 
     @staticmethod
     def parse_file(file: str) -> "RPPModel":
@@ -166,5 +168,35 @@ class RPPModel:
                 element["faces"] = flipped_faces
         return model
 
+    def _mixin(self, temp_dir: str) -> Model:
+        parent = None
+        textures = {}
+        elements = []
+        display = {}
+
+        for model in self.mixin["models"]:
+            # Minecraft model
+            if isinstance(model, str):
+                parsed_model = Model.parse_file(find_model(model, temp_dir), temp_dir)
+            # RPP model
+            else:
+                parsed_model = RPPModel.parse(model).process(temp_dir)[0]
+
+            if parsed_model.parent is not None:
+                parent = parsed_model.parent
+            if parsed_model.textures is not None:
+                textures |= parsed_model.textures
+            if parsed_model.elements is not None:
+                elements += parsed_model.elements
+            if parsed_model.display is not None:
+                display |= parsed_model.display
+
+        return Model(parent, textures, elements, display, temp_dir)
+
     def process(self, temp_dir: str) -> tuple[Model, str]:
-        return self._modify(temp_dir), self.identifier
+        if self.modify is not None:
+            return self._modify(temp_dir), self.identifier
+        elif self.mixin is not None:
+            return self._mixin(temp_dir), self.identifier
+        else:
+            return Model(None, None, [], None, temp_dir), self.identifier
