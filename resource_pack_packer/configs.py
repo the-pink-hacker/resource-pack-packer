@@ -12,9 +12,19 @@ from resource_pack_packer.settings import MAIN_SETTINGS
 from resource_pack_packer.settings import parse_keyword
 
 
-def parse_name_scheme_keywords(scheme, name, version, mc_version):
+def parse_name_scheme_keywords(scheme: str, name: str, version: str, mc_version: str):
+    split_mc_version = tuple(mc_version.split("."))
+
+    if len(split_mc_version) == 1:
+        split_mc_version = split_mc_version[0], 0, 0
+    elif len(split_mc_version) == 2:
+        split_mc_version = split_mc_version[0], split_mc_version[1], 0
+
     scheme = parse_keyword(scheme, "name", name)
     scheme = parse_keyword(scheme, "version", version)
+    scheme = parse_keyword(scheme, "mcvX", split_mc_version[0])
+    scheme = parse_keyword(scheme, "mcvY", split_mc_version[1])
+    scheme = parse_keyword(scheme, "mcvZ", split_mc_version[2])
     scheme = parse_keyword(scheme, "mcversion", mc_version)
     return scheme
 
