@@ -15,10 +15,12 @@ from resource_pack_packer.settings import parse_keyword
 def parse_name_scheme_keywords(scheme: str, name: str, version: str, mc_version: str):
     split_mc_version = tuple(mc_version.split("."))
 
+    print(len(split_mc_version))
+
     if len(split_mc_version) == 1:
-        split_mc_version = split_mc_version[0], 0, 0
+        split_mc_version = split_mc_version[0], "0", "0"
     elif len(split_mc_version) == 2:
-        split_mc_version = split_mc_version[0], split_mc_version[1], 0
+        split_mc_version = split_mc_version[0], split_mc_version[1], "0"
 
     scheme = parse_keyword(scheme, "name", name)
     scheme = parse_keyword(scheme, "version", version)
