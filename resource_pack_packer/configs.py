@@ -172,7 +172,9 @@ class Config:
 
     def get_auto_pack_format(self) -> int:
         version = int(self.mc_version.split(".")[1])
-        if version >= 18:
+        if version >= 19:
+            pack_format = 9
+        elif version >= 18:
             pack_format = 8
         elif version >= 17:
             pack_format = 7
