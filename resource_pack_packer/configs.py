@@ -15,8 +15,6 @@ from resource_pack_packer.settings import parse_keyword
 def parse_name_scheme_keywords(scheme: str, name: str, version: str, mc_version: str):
     split_mc_version = tuple(mc_version.split("."))
 
-    print(len(split_mc_version))
-
     if len(split_mc_version) == 1:
         split_mc_version = split_mc_version[0], "0", "0"
     elif len(split_mc_version) == 2:
