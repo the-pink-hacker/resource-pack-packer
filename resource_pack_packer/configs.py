@@ -171,7 +171,12 @@ class Config:
             self.curseforge_dependencies = []
 
     def get_auto_pack_format(self) -> int:
-        version = int(self.mc_version.split(".")[1])
+        try:
+            version = int(self.mc_version.split(".")[1])
+        except IndexError:
+            # Is a snapshot
+            version = 19
+
         if version >= 19:
             pack_format = 9
         elif version >= 18:
