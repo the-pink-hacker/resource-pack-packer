@@ -7,46 +7,17 @@ import requests
 import shutil
 
 from glob import glob
-from typing import Union, Optional
+from typing import Optional
 
 from resource_pack_packer.configs import PackInfo, RunOptions, Config
 from resource_pack_packer.console import choose_from_list, add_to_logger_name
 from resource_pack_packer.settings import MAIN_SETTINGS
+from resource_pack_packer.util.cache import update_cache, check_cache
 
 logger = logging.getLogger("Setup")
 
 URL_CURSEFORGE = "https://api.curseforge.com"
 URL_MINECRAFT_VERSION_INDEX = "https://launchermeta.mojang.com/mc/game/version_manifest_v2.json"
-
-
-def update_cache(value: Union[str, list[str]], src: str):
-    cache_data = {
-        "cache": []
-    }
-    # Cache file exists
-    if os.path.exists(src):
-        with open(src, "r") as file:
-            cache_data = json.load(file)
-
-    # Add to cache with duplicates
-    if isinstance(value, str):
-        cache_set = set(cache_data["cache"])
-        cache_set.add(value)
-        cache_data["cache"] = list(set(cache_data["cache"]) | cache_set)
-    elif isinstance(value, list):
-        cache_data["cache"] = list(set(cache_data["cache"]) | set(value))
-
-    with open(src, "w", encoding="utf-8") as file:
-        json.dump(cache_data, file, ensure_ascii=False, indent=2)
-
-
-def check_cache(value: str, src: str) -> bool:
-    if os.path.exists(src):
-        with open(src, "r") as file:
-            cache_data = json.load(file)
-            if value in cache_data["cache"]:
-                return True
-    return False
 
 
 def extract_jar(src: str, mc_version: str):

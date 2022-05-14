@@ -14,6 +14,7 @@ from resource_pack_packer.console import choose_from_list, input_log
 from resource_pack_packer.preprocessor import RPPModel, Model
 from resource_pack_packer.selectors import parse_minecraft_identifier
 from resource_pack_packer.settings import MAIN_SETTINGS, parse_dir_keywords
+from resource_pack_packer.util.cache import update_cache, get_cache
 from resource_pack_packer.validation import validate
 
 
@@ -37,6 +38,8 @@ def minify_json(directory):
 
 
 class Packer:
+    cache_dir: str
+
     def __init__(self, pack=None, parent=None):
         self.TEMP_DIR = parse_dir_keywords(os.path.join(MAIN_SETTINGS.get_property("locations", "working_directory"),
                                                         MAIN_SETTINGS.get_property("locations", "temp")))
@@ -106,6 +109,20 @@ class Packer:
         else:
             self.version = input_log("Resource pack version:")
 
+        # Dev cache
+        self.cache_dir = os.path.join(parse_dir_keywords(self.run_option.out_dir),
+                                      ".rpp", f"{os.path.basename(self.pack_dir).lower().replace(' ', '_')}.json")
+
+        # Clear previous dev packs
+        for item in get_cache(self.cache_dir):
+            cache_pack_dir = os.path.join(parse_dir_keywords(self.run_option.out_dir), item)
+
+            if os.path.exists(cache_pack_dir):
+                shutil.rmtree(cache_pack_dir)
+                self.logger.info(f"Cleared old dev pack: {item}")
+
+        update_cache([], self.cache_dir)
+
         # Config
         if config_override is None:
             self.configs, config_override = self.run_option.get_configs(self.pack_info.configs, self.logger)
@@ -142,7 +159,7 @@ class Packer:
         temp_pack_dir = os.path.join(self.TEMP_DIR, pack_name)
 
         # Overrides output
-        if self.run_option.out_dir != MAIN_SETTINGS.get_property("locations", "out"):
+        if parse_dir_keywords(self.run_option.out_dir) != parse_dir_keywords(MAIN_SETTINGS.get_property("locations", "out")):
             temp_pack_dir = os.path.join(parse_dir_keywords(self.run_option.out_dir), pack_name)
             self.clear_temp(temp_pack_dir)
 
@@ -214,6 +231,9 @@ class Packer:
             output = os.path.normpath(os.path.join(self.OUT_DIR, pack_name + ".zip"))
             zip_dir(temp_pack_dir, output)
             logger.info(f"Completed pack: {output}")
+        elif self.run_option.out_dir == "#packdir":
+
+            update_cache(pack_name, self.cache_dir)
 
         if self.run_option.validate:
             logger.info(f"Validating...")
