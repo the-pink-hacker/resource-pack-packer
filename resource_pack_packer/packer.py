@@ -109,18 +109,20 @@ class Packer:
             self.version = input_log("Resource pack version:")
 
         # Dev cache
-        self.cache_dir = os.path.join(parse_dir_keywords(self.run_option.out_dir),
-                                      ".rpp", f"{os.path.basename(self.pack_dir).lower().replace(' ', '_')}.json")
+        if parse_dir_keywords(self.run_option.out_dir) != parse_dir_keywords(MAIN_SETTINGS.get_property("locations", "out")):
+            self.cache_dir = os.path.join(parse_dir_keywords(self.run_option.out_dir),
+                                          ".rpp", f"{os.path.basename(self.pack_dir).lower().replace(' ', '_')}.json")
+            print(self.cache_dir)
 
-        # Clear previous dev packs
-        for item in get_cache(self.cache_dir):
-            cache_pack_dir = os.path.join(parse_dir_keywords(self.run_option.out_dir), item)
+            # Clear previous dev packs
+            for item in get_cache(self.cache_dir):
+                cache_pack_dir = os.path.join(parse_dir_keywords(self.run_option.out_dir), item)
 
-            if os.path.exists(cache_pack_dir):
-                shutil.rmtree(cache_pack_dir)
-                self.logger.info(f"Cleared old dev pack: {item}")
+                if os.path.exists(cache_pack_dir):
+                    shutil.rmtree(cache_pack_dir)
+                    self.logger.info(f"Cleared old dev pack: {item}")
 
-        update_cache([], self.cache_dir)
+            update_cache([], self.cache_dir)
 
         # Config
         if config_override is None:
@@ -129,7 +131,7 @@ class Packer:
             self.configs = self.run_option.get_configs(self.pack_info.configs, self.logger, config_override)[0]
 
         # Pack
-        if self.run_option.out_dir == MAIN_SETTINGS.get_property("locations", "out"):
+        if parse_dir_keywords(self.run_option.out_dir) == parse_dir_keywords(MAIN_SETTINGS.get_property("locations", "out")):
             self.clear_temp()
 
         self.clear_out()
