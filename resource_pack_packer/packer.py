@@ -165,7 +165,7 @@ class Packer:
 
         # Copy Files
         logger.info("Copying...")
-        self._copy_pack(self.pack_dir, temp_pack_dir)
+        Packer._copy_pack(self.pack_dir, temp_pack_dir)
 
         # Delete Textures
         if config.delete_textures:
@@ -236,7 +236,8 @@ class Packer:
             logger.info(f"Validating...")
             validate(temp_pack_dir, logger.name)
 
-    def _copy_pack(self, src: str, dest: str):
+    @staticmethod
+    def _copy_pack(src: str, dest: str):
         files = glob(os.path.join(src, "**"), recursive=True)
 
         copy_threads = []
