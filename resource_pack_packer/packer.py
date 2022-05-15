@@ -112,7 +112,6 @@ class Packer:
         if parse_dir_keywords(self.run_option.out_dir) != parse_dir_keywords(MAIN_SETTINGS.get_property("locations", "out")):
             self.cache_dir = os.path.join(parse_dir_keywords(self.run_option.out_dir),
                                           ".rpp", f"{os.path.basename(self.pack_dir).lower().replace(' ', '_')}.json")
-            print(self.cache_dir)
 
             # Clear previous dev packs
             for item in get_cache(self.cache_dir):
@@ -171,7 +170,7 @@ class Packer:
         # Delete Textures
         if config.delete_textures:
             logger.info("Deleting textures...")
-            self.delete(temp_pack_dir, "textures", config.ignore_textures, logger)
+            Packer.delete(temp_pack_dir, "textures", config.ignore_textures, logger)
 
         # Generate Meta
         with open(os.path.join(temp_pack_dir, "pack.mcmeta"), "w") as file:
@@ -213,7 +212,7 @@ class Packer:
         # Minify Json
         if config.minify_json and self.run_option.minify_json:
             logger.info("Minifying json files...")
-            self.minify_json_files(temp_pack_dir)
+            Packer.minify_json_files(temp_pack_dir)
 
         # Delete Empty Folders
         if config.delete_empty_folders:
@@ -244,14 +243,15 @@ class Packer:
 
         for file in files:
             if os.path.isfile(file):
-                thread = Thread(target=self._copy_file, args=[src, dest, file])
+                thread = Thread(target=Packer._copy_file, args=[src, dest, file])
                 copy_threads.append(thread)
                 thread.start()
 
         for thread in copy_threads:
             thread.join()
 
-    def _copy_file(self, src, dest, file):
+    @staticmethod
+    def _copy_file(src, dest, file):
         file_dest = file.replace(src, dest)
 
         try:
@@ -263,7 +263,8 @@ class Packer:
                 pass
             shutil.copy(file, file_dest)
 
-    def delete(self, directory, folder, ignore, logger: logging.Logger):
+    @staticmethod
+    def delete(directory, folder, ignore, logger: logging.Logger):
         namespaces = glob(os.path.join(directory, "assets", "*"))
 
         for i, namespace in enumerate(namespaces, start=1):
@@ -280,7 +281,8 @@ class Packer:
                         shutil.rmtree(fold)
                 logger.info(f"Deleted texture [{i}/{len(namespaces)}]: {os.path.basename(namespace)}")
 
-    def minify_json_files(self, temp_pack_dir):
+    @staticmethod
+    def minify_json_files(temp_pack_dir):
         files = glob(os.path.join(temp_pack_dir, "**"), recursive=True)
 
         for file in files:
