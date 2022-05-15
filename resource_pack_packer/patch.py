@@ -275,10 +275,7 @@ class MixinModifier:
 
     @staticmethod
     def parse(data: list):
-        modifiers = []
-        for modifier in data:
-            modifiers.append(MixinModifier(modifier["type"], modifier["arguments"]))
-        return modifiers
+        return list(map(lambda d: MixinModifier(d["type"], d["arguments"]), data))
 
 
 class Mixin:

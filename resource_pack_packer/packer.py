@@ -75,9 +75,8 @@ class Packer:
         if pack_override is None:
             config_files = glob(
                 os.path.join(MAIN_SETTINGS.get_property("locations", "working_directory"), "configs", "*"))
-            config_file_names = []
-            for file in config_files:
-                config_file_names.append(os.path.basename(file))
+
+            config_file_names = list(map(lambda f: os.path.basename(f), config_files))
 
             selected_pack_name = choose_from_list(config_file_names, "Select pack:")[0]
         else:
@@ -197,11 +196,8 @@ class Packer:
         rpp_models = glob(os.path.join(temp_pack_dir, "assets", "*", "models", "rpp", "**"), recursive=True)
 
         # Remove folders and non-json files
-        parsed_rpp_models = []
-        for model in rpp_models:
-            if os.path.isfile(model) and model.endswith(".rpp.json"):
-                parsed_rpp_models.append(model)
-
+        parsed_rpp_models = list(filter(lambda m: True if os.path.isfile(m) and m.endswith(".rpp.json") else None,
+                                        rpp_models))
         if len(parsed_rpp_models):
             logger.info("Running preprocessors...")
 

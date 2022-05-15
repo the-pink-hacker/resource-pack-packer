@@ -84,22 +84,9 @@ class FileSelector:
                 else:
                     lang_files = []
 
-                parsed_models = []
-
-                for model in models:
-                    parsed_models.append(os.path.join(self.pack, parse_minecraft_identifier(model, "models", "json")))
-
-                parsed_blockstates = []
-
-                for blockstate in blockstates:
-                    parsed_blockstates.append(
-                        os.path.join(self.pack, parse_minecraft_identifier(blockstate, "blockstates", "json")))
-
-                parsed_lang_files = []
-
-                for lang_file in lang_files:
-                    parsed_lang_files.append(
-                        os.path.join(self.pack, parse_minecraft_identifier(lang_file, "lang", "json")))
+                parsed_models = list(map(lambda m: os.path.join(self.pack, parse_minecraft_identifier(m, "models", "json")), models))
+                parsed_blockstates = list(map(lambda b: os.path.join(self.pack, parse_minecraft_identifier(b, "blockstates", "json")), blockstates))
+                parsed_lang_files = list(map(lambda l: os.path.join(self.pack, parse_minecraft_identifier(l, "lang", "json")), lang_files))
 
                 return parsed_models + parsed_blockstates + parsed_lang_files
             case FileSelectorType.BLOCK.value:

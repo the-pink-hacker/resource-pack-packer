@@ -86,9 +86,7 @@ def install_version_from_index(index_dir: str) -> str:
 def setup(pack_override: Optional[str] = None, config_override: Optional[list[Config] | str] = None):
     # Pack info
     config_files = glob(os.path.join(MAIN_SETTINGS.get_property("locations", "working_directory"), "configs", "*"))
-    config_file_names = []
-    for file in config_files:
-        config_file_names.append(os.path.basename(file))
+    config_file_names = list(map(lambda f: os.path.basename(f), config_files))
 
     if pack_override is None:
         selected_pack_name = choose_from_list(config_file_names, "Select pack:")[0]
