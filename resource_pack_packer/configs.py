@@ -173,7 +173,7 @@ class Config:
     def get_auto_pack_format(self) -> int:
         try:
             version = int(self.mc_version.split(".")[1])
-        except IndexError:
+        except (IndexError, ValueError):
             # Is a snapshot
             version = 19
 
