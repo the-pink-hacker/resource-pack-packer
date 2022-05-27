@@ -108,8 +108,17 @@ class Packer:
         else:
             self.version = input_log("Resource pack version:")
 
+        # Config
+        if config_override is None:
+            self.configs, config_override = self.run_option.get_configs(self.pack_info.configs, self.logger)
+        else:
+            self.configs = self.run_option.get_configs(self.pack_info.configs, self.logger, config_override)[0]
+
+        # Pack
+        if parse_dir_keywords(self.run_option.out_dir) == parse_dir_keywords(MAIN_SETTINGS.get_property("locations", "out")):
+            self.clear_temp()
         # Dev cache
-        if parse_dir_keywords(self.run_option.out_dir) != parse_dir_keywords(MAIN_SETTINGS.get_property("locations", "out")):
+        else:
             self.cache_dir = os.path.join(parse_dir_keywords(self.run_option.out_dir),
                                           ".rpp", f"{os.path.basename(self.pack_dir).lower().replace(' ', '_')}.json")
 
@@ -122,16 +131,6 @@ class Packer:
                     self.logger.info(f"Cleared old dev pack: {item}")
 
             update_cache([], self.cache_dir)
-
-        # Config
-        if config_override is None:
-            self.configs, config_override = self.run_option.get_configs(self.pack_info.configs, self.logger)
-        else:
-            self.configs = self.run_option.get_configs(self.pack_info.configs, self.logger, config_override)[0]
-
-        # Pack
-        if parse_dir_keywords(self.run_option.out_dir) == parse_dir_keywords(MAIN_SETTINGS.get_property("locations", "out")):
-            self.clear_temp()
 
         self.clear_out()
         start_time = default_timer()
