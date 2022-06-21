@@ -1,7 +1,7 @@
 {
-  "$id": "https://raw.githubusercontent.com/RyanGar46/resource-pack-packer/main/schema/assets/blockstates",
+  "$id": "https://raw.githubusercontent.com/RyanGar46/resource-pack-packer/main/schema/assets/models",
   "$schema": "http://json-schema.org/draft-07/schema",
-  "title": "A blockstate asset.",
+  "title": "A model asset.",
   "properties": {
     "parent": {
       "description": "Loads a different model from the given path, in form of a resource location. If both \"parent\" and \"elements\" are set, the \"elements\" tag overrides the \"elements\" tag from the previous model.",
