@@ -34,7 +34,8 @@ def download_file(url: str, dest: str):
 
     with requests.get(url, stream=True) as r:
         with open(dest, "wb") as f:
-            shutil.copyfileobj(r.raw, f)
+            for chunk in r.iter_content(chunk_size=1024):
+                f.write(chunk)
 
 
 class Mod:
