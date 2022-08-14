@@ -32,6 +32,7 @@ class FileSelectorType(Enum):
     PATH = "path"
     IDENTIFIER = "identifier"
     BLOCK = "block"
+    UNION = "union"
 
 
 class FileSelector:
@@ -121,12 +122,24 @@ class FileSelector:
 
                     files += parsed_block_files
                 return files
+            case FileSelectorType.UNION.value:
+                # Prevents multiple of the same file being selected
+                files: set = set()
+
+                if "selectors" in self.arguments:
+                    for selectors in self.arguments["selectors"]:
+                        selector_output = FileSelector.parse(selectors, self.pack).run(pack_info, logger)
+                        if selector_output is not None:
+                            files |= set(selector_output)
+
+                print(files)
+                return list(files)
             case _:
                 logger.error(f"Incorrect file selector type: {self.selector_type}")
                 return
 
     @staticmethod
-    def parse(data: dict, pack):
+    def parse(data: dict, pack: str):
         return FileSelector(data["type"], data["arguments"], pack)
 
 

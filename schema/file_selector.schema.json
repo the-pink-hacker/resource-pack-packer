@@ -12,7 +12,8 @@
         "file",
         "path",
         "identifier",
-        "block"
+        "block",
+        "union"
       ]
     },
     "arguments": {
@@ -146,6 +147,30 @@
                 }
               },
               "required": ["blocks"]
+            }
+          }
+        },
+        "else": {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "union"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "arguments": {
+                "properties": {
+                  "selectors": {
+                    "description": "An array of file selectors. Duplicates will be merged.",
+                    "type": "array",
+                    "items": {
+                      "$ref": "file_selector.schema.json"
+                    }
+                  }
+                }
+              }
             }
           }
         }
