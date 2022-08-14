@@ -65,7 +65,7 @@ class FileSelector:
                     sorted_files = []
                     for file in files:
                         if regex.match(os.path.relpath(file, os.path.join(self.pack, file_path))) is not None:
-                            sorted_files.append(os.path.relpath(file, self.pack))
+                            sorted_files.append(file)
                     return sorted_files
                 else:
                     return files
