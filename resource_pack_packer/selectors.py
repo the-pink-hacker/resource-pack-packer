@@ -132,7 +132,6 @@ class FileSelector:
                         if selector_output is not None:
                             files |= set(selector_output)
 
-                print(files)
                 return list(files)
             case _:
                 logger.error(f"Incorrect file selector type: {self.selector_type}")
