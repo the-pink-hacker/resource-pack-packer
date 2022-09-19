@@ -13,7 +13,8 @@
         "path",
         "identifier",
         "block",
-        "union"
+        "union",
+        "blockstate"
       ]
     },
     "arguments": {
@@ -169,6 +170,33 @@
                       "$ref": "file_selector.schema.json"
                     }
                   }
+                },
+                "required": ["selectors"]
+              }
+            }
+          },
+          "else": {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "blockstate"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "arguments": {
+                  "properties": {
+                    "blockstate": {
+                      "description": "A minecraft resource identifier to a blockstate.",
+                      "type": "string"
+                    },
+                    "include_blockstate": {
+                      "description": "Weather the blockstate should be included in the selection. False will just be the models.",
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["blockstate"]
                 }
               }
             }
