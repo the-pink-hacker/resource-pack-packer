@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import re
@@ -33,6 +34,7 @@ class FileSelectorType(Enum):
     IDENTIFIER = "identifier"
     BLOCK = "block"
     UNION = "union"
+    BLOCKSTATE = "blockstate"
 
 
 class FileSelector:
@@ -124,13 +126,35 @@ class FileSelector:
                 return files
             case FileSelectorType.UNION.value:
                 # Prevents multiple of the same file being selected
-                files: set = set()
+                files = set()
 
                 if "selectors" in self.arguments:
                     for selectors in self.arguments["selectors"]:
                         selector_output = FileSelector.parse(selectors, self.pack).run(pack_info, logger)
                         if selector_output is not None:
                             files |= set(selector_output)
+
+                return list(files)
+            case FileSelectorType.BLOCKSTATE.value:
+                files = set()
+
+                if "blockstate" in self.arguments:
+                    blockstate = os.path.join(self.pack, parse_minecraft_identifier(self.arguments["blockstate"], "blockstates", "json"))
+
+                    if "include_blockstate" in self.arguments:
+                        if self.arguments["include_blockstate"]:
+                            files.add(blockstate)
+
+                    # Check if the blockstate exists
+                    if os.path.exists(blockstate):
+                        with open(blockstate, "r") as blockstate_file:
+                            blockstate_data = json.load(blockstate_file)
+
+                        if "multipart" in blockstate_data:
+                            for state in blockstate_data["multipart"]:
+                                if "apply" in state:
+                                    if "model" in state["apply"]:
+                                        files.add(os.path.join(self.pack, parse_minecraft_identifier(state["apply"]["model"], "models", "json")))
 
                 return list(files)
             case _:
