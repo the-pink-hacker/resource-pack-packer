@@ -5,11 +5,11 @@ from enum import Enum
 from functools import singledispatch
 from glob import glob
 from multiprocessing import Pool
-from typing import overload, Optional
+from typing import Optional
 
 import jsonschema
-
 from resource_pack_packer.console import add_to_logger_name
+import resource_pack_packer.settings
 
 
 class AssetType(Enum):
@@ -68,11 +68,12 @@ def validate(pack: str, logger_name: str):
     logger.info("Validated models.")
 
     # Sound index
-    validate_asset(os.path.join(assets_dir, AssetType.get_path(AssetType.SOUND_INDEX)), AssetType.SOUND_INDEX, logger)
+    validate_asset(os.path.join(assets_dir, AssetType.get_path(
+        AssetType.SOUND_INDEX)), AssetType.SOUND_INDEX, logger)
 
 
 def get_schema(asset_type: AssetType) -> dict:
-    with open(os.path.join("schema", AssetType.get_schema_path(asset_type)), "r") as raw_schema:
+    with open(os.path.join(resource_pack_packer.settings.PROGRAM_PATH, "schema", AssetType.get_schema_path(asset_type)), "r") as raw_schema:
         parsed_schema = json.load(raw_schema)
     return parsed_schema
 
@@ -105,13 +106,15 @@ def validate_asset(assets_dir: str, asset_type: AssetType, logger: logging.Logge
                             for face in element["faces"].values():
                                 # Texture
                                 if "texture" in face and face["texture"] == "#missing":
-                                    logger.warning(f"Missing texture in: {file}")
+                                    logger.warning(
+                                        f"Missing texture in: {file}")
 
     return True
 
 
 def validate_assets(asset_dir: str, asset_type: AssetType, extension: str, logger: logging.Logger):
-    files = glob(os.path.join(asset_dir, AssetType.get_path(asset_type)), recursive=True)
+    files = glob(os.path.join(
+        asset_dir, AssetType.get_path(asset_type)), recursive=True)
     parsed_schema = get_schema(asset_type)
     filtered_files = []
 
