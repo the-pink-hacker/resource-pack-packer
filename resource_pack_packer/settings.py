@@ -2,6 +2,7 @@ import logging
 import os
 import tkinter
 from tkinter import filedialog
+from typing import Optional
 
 from resource_pack_packer.console import parse_dir
 from resource_pack_packer.lib.jsetting.settings import Settings
@@ -14,7 +15,7 @@ logger = logging.getLogger("SETTINGS")
 # The location of the rpp
 PROGRAM_PATH = os.path.dirname(os.path.dirname(__file__))
 
-print(f"RPP Path: {PROGRAM_PATH}")
+logger.debug(f"RPP Path: {PROGRAM_PATH}")
 
 
 def parse_keyword(directory, keyword, variable):
@@ -29,12 +30,18 @@ def parse_dir_keywords(directory):
     return parse_dir(directory)
 
 
-def folder_dialog(title="Select Folder", directory=os.path.abspath(os.sep)):
+def folder_dialog(title="Select Folder", directory=os.path.abspath(os.sep)) -> Optional[str]:
     logging.info(f"Select Folder: {title}")
-    return parse_dir(filedialog.askdirectory(title=title, initialdir=directory))
+    selected_path = filedialog.askdirectory(title=title, initialdir=directory)
+
+    # Prevents error if user cancels dialog
+    if type(selected_path) is not str or selected_path == "":
+        return None
+    else:
+        return parse_dir(selected_path)
 
 
-print(f"Settings Path: {os.path.join(PROGRAM_PATH, 'settings.json')}")
+logger.debug(f"Settings Path: {os.path.join(PROGRAM_PATH, 'settings.json')}")
 
 MAIN_SETTINGS = Settings(0, os.path.join(PROGRAM_PATH, "settings.json"))\
     .add_property("locations", "minecraft")\
